@@ -613,6 +613,12 @@ struct OnboardingView: View {
 
     private func canContinue() -> Bool {
         let q = questions[index]
+        let result = _canContinueCheck(q)
+        print("✅ [OnboardingView] canContinue() = \(result) for index \(index), type: \(q.type)")
+        return result
+    }
+    
+    private func _canContinueCheck(_ q: OnboardingQuestion) -> Bool {
         
         // Check custom input validity
         if let customOption = q.options?.first(where: { $0.isCustom }) {
@@ -643,6 +649,7 @@ struct OnboardingView: View {
     }
     
     private func nextQuestion() {
+        print("🔘 [OnboardingView] nextQuestion() called - Current index: \(index), Type: \(questions[index].type)")
         let q = questions[index]
         
         // Handle Custom Input Saving (Swap placeholder for real text)
