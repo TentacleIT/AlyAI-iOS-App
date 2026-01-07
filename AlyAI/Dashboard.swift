@@ -41,7 +41,7 @@ struct Dashboard_Enhanced: View {
                                     .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.black)
                                 
-                                Text(profileManager.userProfile.name.isEmpty ? "User" : profileManager.userProfile.name + ".")
+                                Text(personalizationContext.userName.isEmpty ? "User" : personalizationContext.userName + ".")
                                     .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.black)
                             }
@@ -244,8 +244,8 @@ struct Dashboard_Enhanced: View {
             }
             .sheet(isPresented: $showChat) {
                 ChatView_Enhanced(
-                    userAnswers: personalizationContext.userAnswers,
-                    chatStore: ChatStore.shared
+                    userAnswers: profileManager.currentUserProfile?.userAnswers ?? [:],
+                    chatStore: ChatStore()
                 )
             }
         }
