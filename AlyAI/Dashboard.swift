@@ -54,21 +54,21 @@ struct Dashboard_Enhanced: View {
                         // Mood selector (emoji style from mockup)
                         VStack(spacing: 16) {
                             HStack(spacing: 12) {
-                                MoodButton(emoji: "😄", label: "Very\nHappy", isSelected: selectedMood == "very_happy") {
+                                MoodButton(emoji: "😄", label: "Very\nHappy", isSelected: selectedMood == "very_happy", action: {
                                     selectedMood = "very_happy"
-                                }
-                                MoodButton(emoji: "🙂", label: "Happy", isSelected: selectedMood == "happy") {
+                                })
+                                MoodButton(emoji: "🙂", label: "Happy", isSelected: selectedMood == "happy", action: {
                                     selectedMood = "happy"
-                                }
-                                MoodButton(emoji: "😐", label: "Neutral", isSelected: selectedMood == "neutral") {
+                                })
+                                MoodButton(emoji: "😐", label: "Neutral", isSelected: selectedMood == "neutral", action: {
                                     selectedMood = "neutral"
-                                }
-                                MoodButton(emoji: "😔", label: "Sad", isSelected: selectedMood == "sad") {
+                                })
+                                MoodButton(emoji: "😔", label: "Sad", isSelected: selectedMood == "sad", action: {
                                     selectedMood = "sad"
-                                }
-                                MoodButton(emoji: "😢", label: "Very Sad", isSelected: selectedMood == "very_sad") {
+                                })
+                                MoodButton(emoji: "😢", label: "Very Sad", isSelected: selectedMood == "very_sad", action: {
                                     selectedMood = "very_sad"
-                                }
+                                })
                             }
                             .padding(.horizontal, 20)
                         }
