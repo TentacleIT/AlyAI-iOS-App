@@ -70,7 +70,7 @@ final class OpenAIService {
             // Check HTTP status code
             guard httpResponse.statusCode == 200 else {
                 print("❌ [OpenAIService] HTTP Error: \(httpResponse.statusCode)")
-                let errorMessage = parseErrorResponse(data: data) ?? "HTTP Error \(httpResponse.statusCode)"
+                let errorMessage = self.parseErrorResponse(data: data) ?? "HTTP Error \(httpResponse.statusCode)"
                 completion("Error: \(errorMessage)")
                 return
             }

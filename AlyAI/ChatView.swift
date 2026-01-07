@@ -68,15 +68,15 @@ struct ChatView_Enhanced: View {
                 
                 // Input Section
                 VStack(spacing: 12) {
-                    if !errorMessage?.isEmpty ?? false {
+                    if let errorMessage = errorMessage, !errorMessage.isEmpty {
                         HStack {
                             Image(systemName: "exclamationmark.circle.fill")
                                 .foregroundColor(.red)
-                            Text(errorMessage ?? "An error occurred")
+                            Text(errorMessage)
                                 .font(.caption)
                                 .foregroundColor(.red)
                             Spacer()
-                            Button(action: { errorMessage = nil }) {
+                            Button(action: { self.errorMessage = nil }) {
                                 Image(systemName: "xmark")
                                     .foregroundColor(.red)
                             }
@@ -180,10 +180,10 @@ struct ChatView_Enhanced: View {
         8. Avoid generic advice - everything must be specific to their context
         """
         
-        OpenAIService.shared.runAssessment(prompt: prompt) { [weak self] response in
+        OpenAIService.shared.runAssessment(prompt: prompt) { response in
             DispatchQueue.main.async {
-                self?.chatStore.addMessage(response, isUser: false)
-                self?.isLoading = false
+                chatStore.addMessage(response, isUser: false)
+                isLoading = false
             }
         }
     }

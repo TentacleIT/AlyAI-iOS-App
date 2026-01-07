@@ -134,9 +134,10 @@ class PersonalizationContext: ObservableObject {
         }
         
         // Determine goal orientation
-        if answers["main_goal"] as? [String] ?? [] |> { $0.contains("Fitness") || $0.contains("Health") } {
+        let mainGoals = answers["main_goal"] as? [String] ?? []
+        if mainGoals.contains("Fitness") || mainGoals.contains("Health") {
             profile.goalOrientation = "health-focused"
-        } else if answers["main_goal"] as? [String] ?? [] |> { $0.contains("Mental") || $0.contains("Emotional") } {
+        } else if mainGoals.contains("Mental") || mainGoals.contains("Emotional") {
             profile.goalOrientation = "wellness-focused"
         }
         
