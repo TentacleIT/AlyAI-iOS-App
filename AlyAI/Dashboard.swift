@@ -15,36 +15,45 @@ struct Dashboard_Enhanced: View {
                 // MARK: - Personalized Header
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text(personalizationContext.getPersonalizedGreeting())
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
                                 .foregroundColor(.alyTextPrimary)
                             
                             Text(getContextualSubheading())
-                                .font(.caption)
+                                .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.alyTextSecondary)
                         }
                         
                         Spacer()
                         
                         // Quick stats indicator
-                        VStack(alignment: .trailing, spacing: 4) {
-                            HStack(spacing: 4) {
+                        VStack(alignment: .trailing, spacing: 6) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "bolt.fill")
-                                    .font(.caption)
+                                    .font(.system(size: 12, weight: .semibold))
                                 Text(personalizationContext.energyLevel)
-                                    .font(.caption2)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .textCase(.lowercase)
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.alyaiPhysical.opacity(0.15))
                             .foregroundColor(.alyaiPhysical)
+                            .cornerRadius(12)
                             
-                            HStack(spacing: 4) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "moon.fill")
-                                    .font(.caption)
+                                    .font(.system(size: 12, weight: .semibold))
                                 Text(personalizationContext.sleepQuality)
-                                    .font(.caption2)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .textCase(.lowercase)
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.alyaiMental.opacity(0.15))
                             .foregroundColor(.alyaiMental)
+                            .cornerRadius(12)
                         }
                     }
                     .padding()
@@ -58,7 +67,8 @@ struct Dashboard_Enhanced: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 }
                 .padding()
                 
@@ -147,52 +157,57 @@ struct Dashboard_Enhanced: View {
                         
                         // Goals Progress
                         if !personalizationContext.primaryGoals.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 14) {
                                 Text("Your Goals")
-                                    .font(.headline)
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.alyTextPrimary)
                                 
                                 ForEach(personalizationContext.primaryGoals.prefix(3), id: \.self) { goal in
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "checkmark.circle")
+                                    HStack(spacing: 14) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 22, weight: .semibold))
                                             .foregroundColor(.alyaiPhysical)
                                         
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .leading, spacing: 5) {
                                             Text(goal)
-                                                .font(.body)
+                                                .font(.system(size: 16, weight: .semibold))
                                                 .foregroundColor(.alyTextPrimary)
                                             
                                             Text(getGoalRecommendation(for: goal))
-                                                .font(.caption)
+                                                .font(.system(size: 14, weight: .regular))
                                                 .foregroundColor(.alyTextSecondary)
+                                                .lineSpacing(1)
                                         }
                                         
                                         Spacer()
                                     }
-                                    .padding()
+                                    .padding(14)
                                     .background(Color.alyCard)
-                                    .cornerRadius(12)
+                                    .cornerRadius(14)
+                                    .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 1)
                                 }
                             }
-                            .padding()
-                            .background(Color.alyCard)
-                            .cornerRadius(12)
+                            .padding(18)
+                            .background(Color.alyCard.opacity(0.5))
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                         }
                         
                         // Needs-Based Recommendations
                         if !personalizationContext.greatestNeeds.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 14) {
                                 Text("Personalized for Your Needs")
-                                    .font(.headline)
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.alyTextPrimary)
                                 
                                 ForEach(personalizationContext.greatestNeeds.prefix(2), id: \.self) { need in
                                     NeedBasedRecommendationCard(need: need, context: personalizationContext)
                                 }
                             }
-                            .padding()
-                            .background(Color.alyCard)
-                            .cornerRadius(12)
+                            .padding(18)
+                            .background(Color.alyCard.opacity(0.5))
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                         }
                     }
                     .padding()
@@ -282,26 +297,28 @@ struct QuickActionButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.system(size: 28, weight: .semibold))
                     .foregroundColor(.white)
                 
                 Text(title)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
             }
-            .frame(width: 80, height: 100)
+            .frame(width: 110, height: 110)
             .background(
                 LinearGradient(
-                    gradient: Gradient(colors: [color, color.opacity(0.7)]),
+                    gradient: Gradient(colors: [color, color.opacity(0.8)]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
-            .cornerRadius(12)
+            .cornerRadius(20)
+            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
         }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -314,43 +331,48 @@ struct PersonalizedInsightCard: View {
     let content: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.alyTextPrimary)
                     
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(color)
-                        .fontWeight(.semibold)
+                        .textCase(.lowercase)
                 }
                 
                 Spacer()
                 
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.system(size: 28, weight: .semibold))
                     .foregroundColor(color)
+                    .padding(12)
+                    .background(color.opacity(0.15))
+                    .clipShape(Circle())
             }
             
             Text(content)
-                .font(.body)
+                .font(.system(size: 15, weight: .regular))
                 .foregroundColor(.alyTextSecondary)
                 .lineLimit(3)
+                .lineSpacing(2)
         }
-        .padding()
+        .padding(18)
         .background(
             LinearGradient(
                 gradient: Gradient(colors: [
-                    color.opacity(0.1),
-                    color.opacity(0.05)
+                    color.opacity(0.08),
+                    color.opacity(0.03)
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .cornerRadius(12)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
 }
 
@@ -363,32 +385,40 @@ struct PersonalizedMetricCard: View {
     let recommendation: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(title)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.alyTextSecondary)
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(color)
+                    .padding(10)
+                    .background(color.opacity(0.15))
+                    .clipShape(Circle())
                 
                 Spacer()
                 
-                Image(systemName: icon)
-                    .foregroundColor(color)
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.alyTextSecondary)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
             }
             
             Text(value)
-                .font(.headline)
+                .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.alyTextPrimary)
+                .textCase(.lowercase)
             
             Text(recommendation)
-                .font(.caption2)
+                .font(.system(size: 13, weight: .regular))
                 .foregroundColor(.alyTextSecondary)
                 .lineLimit(2)
+                .lineSpacing(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
+        .padding(16)
         .background(Color.alyCard)
-        .cornerRadius(12)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -398,25 +428,31 @@ struct NeedBasedRecommendationCard: View {
     let context: PersonalizationContext
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
+                Image(systemName: getIconForNeed(need))
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(getColorForNeed(need))
+                    .padding(10)
+                    .background(getColorForNeed(need).opacity(0.15))
+                    .clipShape(Circle())
+                
                 Text(need)
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.alyTextPrimary)
                 
                 Spacer()
-                
-                Image(systemName: getIconForNeed(need))
-                    .foregroundColor(getColorForNeed(need))
             }
             
             Text(getRecommendationForNeed(need))
-                .font(.caption)
+                .font(.system(size: 14, weight: .regular))
                 .foregroundColor(.alyTextSecondary)
+                .lineSpacing(1)
         }
-        .padding()
-        .background(Color.alyBackground)
-        .cornerRadius(8)
+        .padding(14)
+        .background(Color.alyCard)
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 1)
     }
     
     private func getIconForNeed(_ need: String) -> String {
