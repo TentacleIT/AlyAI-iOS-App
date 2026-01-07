@@ -57,8 +57,8 @@ class HealthKitManager: ObservableObject {
     }
     
     /// Safely create HealthKit types to read
-    private func createHealthKitTypesToRead() -> Set<HKObjectType> {
-        var types: [HKObjectType] = []
+    private func createHealthKitTypesToRead() -> Set<HKSampleType> {
+        var types: [HKSampleType] = []
         
         if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
             types.append(stepType)
@@ -83,8 +83,8 @@ class HealthKitManager: ObservableObject {
     }
     
     /// Safely create HealthKit types to share
-    private func createHealthKitTypesToShare() -> Set<HKObjectType> {
-        var types: [HKObjectType] = []
+    private func createHealthKitTypesToShare() -> Set<HKSampleType> {
+        var types: [HKSampleType] = []
         
         if let mindfulType = HKCategoryType.categoryType(forIdentifier: .mindfulSession) {
             types.append(mindfulType)
