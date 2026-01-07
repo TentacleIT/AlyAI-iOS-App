@@ -112,7 +112,7 @@ struct ModernTextField: View {
                     .foregroundColor(foregroundColor)
             } else {
                 TextField(placeholder, text: $text)
-                    .textFieldStyle(.none)
+                    .textFieldStyle(.plain)
                     .foregroundColor(foregroundColor)
             }
         }
