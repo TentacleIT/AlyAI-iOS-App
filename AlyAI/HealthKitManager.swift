@@ -12,6 +12,7 @@ class HealthKitManager: ObservableObject {
     @Published var latestHeartRate: Double = 0
     @Published var sleepHours: Double = 0
     @Published var hrv: Double = 0
+    @Published var errorMessage: String?
     
     // Track last sync to avoid excessive polling
     private var lastSyncDate: Date?
@@ -25,34 +26,71 @@ class HealthKitManager: ObservableObject {
     func requestAuthorization(completion: @escaping (Bool) -> Void = { _ in }) {
         guard HKHealthStore.isHealthDataAvailable() else {
             print("HealthKit not available on this device.")
+            errorMessage = "HealthKit is not available on this device."
             completion(false)
             return
         }
         
-        let typesToRead: Set<HKObjectType> = [
-            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
-            HKCategoryType.categoryType(forIdentifier: .mindfulSession)!
-        ]
+        // Safely create HealthKit types with proper error handling
+        let typesToRead = createHealthKitTypesToRead()
+        let typesToShare = createHealthKitTypesToShare()
         
-        let typesToShare: Set<HKObjectType> = [
-            HKCategoryType.categoryType(forIdentifier: .mindfulSession)!
-        ]
+        guard !typesToRead.isEmpty, !typesToShare.isEmpty else {
+            print("❌ Failed to create HealthKit types")
+            errorMessage = "Failed to initialize HealthKit types."
+            completion(false)
+            return
+        }
         
-        healthStore.requestAuthorization(toShare: typesToShare as! Set<HKSampleType>, read: typesToRead) { success, error in
+        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    self.isAuthorized = true
-                    self.fetchAllData()
+                    self?.isAuthorized = true
+                    self?.fetchAllData()
                 } else if let error = error {
                     print("HealthKit Authorization Error: \(error.localizedDescription)")
+                    self?.errorMessage = "HealthKit authorization failed: \(error.localizedDescription)"
                 }
                 completion(success)
             }
         }
+    }
+    
+    /// Safely create HealthKit types to read
+    private func createHealthKitTypesToRead() -> Set<HKObjectType> {
+        var types: [HKObjectType] = []
+        
+        if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
+            types.append(stepType)
+        }
+        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) {
+            types.append(heartRateType)
+        }
+        if let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) {
+            types.append(hrvType)
+        }
+        if let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) {
+            types.append(sleepType)
+        }
+        if let restingHRType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) {
+            types.append(restingHRType)
+        }
+        if let mindfulType = HKCategoryType.categoryType(forIdentifier: .mindfulSession) {
+            types.append(mindfulType)
+        }
+        
+        return Set(types)
+    }
+    
+    /// Safely create HealthKit types to share
+    private func createHealthKitTypesToShare() -> Set<HKObjectType> {
+        var types: [HKObjectType] = []
+        
+        if let mindfulType = HKCategoryType.categoryType(forIdentifier: .mindfulSession) {
+            types.append(mindfulType)
+        }
+        
+        return Set(types)
     }
     
     func fetchAllData() {
@@ -65,42 +103,69 @@ class HealthKitManager: ObservableObject {
     }
     
     private func fetchSteps() {
-        let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            print("❌ Unable to create step count type")
+            return
+        }
+        
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
         
-        let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+        let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { [weak self] _, result, error in
+            if let error = error {
+                print("❌ Error fetching steps: \(error)")
+                return
+            }
+            
             guard let result = result, let sum = result.sumQuantity() else { return }
             DispatchQueue.main.async {
-                self.stepCount = Int(sum.doubleValue(for: HKUnit.count()))
+                self?.stepCount = Int(sum.doubleValue(for: HKUnit.count()))
             }
         }
         healthStore.execute(query)
     }
     
     private func fetchHeartRate() {
-        let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
+        guard let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
+            print("❌ Unable to create heart rate type")
+            return
+        }
+        
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-        let query = HKSampleQuery(sampleType: hrType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
+        let query = HKSampleQuery(sampleType: hrType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
+            if let error = error {
+                print("❌ Error fetching heart rate: \(error)")
+                return
+            }
+            
             guard let sample = samples?.first as? HKQuantitySample else { return }
             DispatchQueue.main.async {
-                self.latestHeartRate = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+                self?.latestHeartRate = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
             }
         }
         healthStore.execute(query)
     }
     
     private func fetchSleep() {
-        let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
+        guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
+            print("❌ Unable to create sleep analysis type")
+            return
+        }
+        
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: [])
         
-        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { [weak self] _, samples, error in
+            if let error = error {
+                print("❌ Error fetching sleep: \(error)")
+                return
+            }
+            
             guard let samples = samples as? [HKCategorySample] else { return }
             
-            // Calculate total sleep duration (inHours, as an example)
+            // Calculate total sleep duration
             let totalSeconds = samples.reduce(0.0) { result, sample in
                 // Only count asleep time
                 if sample.value == HKCategoryValueSleepAnalysis.asleep.rawValue || 
@@ -113,19 +178,28 @@ class HealthKitManager: ObservableObject {
             }
             
             DispatchQueue.main.async {
-                self.sleepHours = totalSeconds / 3600.0
+                self?.sleepHours = totalSeconds / 3600.0
             }
         }
         healthStore.execute(query)
     }
     
     private func fetchHRV() {
-        let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!
+        guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
+            print("❌ Unable to create HRV type")
+            return
+        }
+        
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-        let query = HKSampleQuery(sampleType: hrvType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
+        let query = HKSampleQuery(sampleType: hrvType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
+            if let error = error {
+                print("❌ Error fetching HRV: \(error)")
+                return
+            }
+            
             guard let sample = samples?.first as? HKQuantitySample else { return }
             DispatchQueue.main.async {
-                self.hrv = sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
+                self?.hrv = sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
             }
         }
         healthStore.execute(query)

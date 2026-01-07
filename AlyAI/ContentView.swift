@@ -40,7 +40,7 @@ struct ContentView: View {
             } else if profileManager.currentUserProfile != nil && !isDevModeForcedOnboarding {
                 // Check for subscription OR development flag
                 if subscriptionManager.isSubscribed || FeatureFlags.disablePaywallForDevelopment {
-                    Dashboard()
+                    Dashboard_Enhanced()
                 } else {
                     NavigationView {
                         SubscriptionView()

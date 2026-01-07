@@ -1,36 +1,57 @@
 import SwiftUI
 
-struct ChatView: View {
+struct ChatView_Enhanced: View {
     @EnvironmentObject var userSession: UserSession
+    @ObservedObject var personalizationContext = PersonalizationContext.shared
     let userAnswers: [String: Any]
     @ObservedObject var chatStore: ChatStore
     @Environment(\.dismiss) private var dismiss
     
     @State private var inputText = ""
     @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var showError = false
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                // Header with personalized greeting
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AlyAI")
+                        .font(.headline)
+                        .foregroundColor(.alyaiPrimary)
+                    
+                    Text(personalizationContext.getPersonalizedGreeting())
+                        .font(.caption)
+                        .foregroundColor(.alyTextSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.alyBackground)
+                .borderBottom(color: Color.alyCard, width: 1)
+                
                 // Messages
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 16) {
                             ForEach(chatStore.messages) { message in
-                                MessageBubble(message: message)
+                                MessageBubble_Enhanced(message: message, userName: personalizationContext.userName)
                                     .id(message.id)
                             }
                             
                             if isLoading {
                                 HStack {
                                     ProgressView()
-                                        .tint(.alyPrimary)
+                                        .tint(.alyaiPrimary)
                                     Text("AlyAI is thinking...")
                                         .font(.caption)
                                         .foregroundColor(.alyTextSecondary)
                                     Spacer()
                                 }
                                 .padding()
+                                .background(Color.alyCard)
+                                .cornerRadius(12)
+                                .padding(.horizontal)
                             }
                         }
                         .padding()
@@ -45,31 +66,55 @@ struct ChatView: View {
                     }
                 }
                 
-                // Input
-                HStack(spacing: 12) {
-                    TextField("Message AlyAI...", text: $inputText, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.alyCard)
-                        )
-                        .foregroundColor(.alyTextPrimary)
-                    
-                    Button {
-                        sendMessage()
-                    } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(inputText.isEmpty ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.alyPrimary))
+                // Input Section
+                VStack(spacing: 12) {
+                    if !errorMessage?.isEmpty ?? false {
+                        HStack {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundColor(.red)
+                            Text(errorMessage ?? "An error occurred")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            Spacer()
+                            Button(action: { errorMessage = nil }) {
+                                Image(systemName: "xmark")
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
                     }
-                    .disabled(inputText.isEmpty || isLoading)
+                    
+                    HStack(spacing: 12) {
+                        TextField("Share your thoughts...", text: $inputText, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color.alyCard)
+                            .cornerRadius(20)
+                            .lineLimit(1...5)
+                            .foregroundColor(.alyTextPrimary)
+                        
+                        Button {
+                            sendMessage()
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(
+                                    inputText.trimmingCharacters(in: .whitespaces).isEmpty || isLoading
+                                    ? AnyShapeStyle(Color.gray.opacity(0.5))
+                                    : AnyShapeStyle(Color.alyaiPrimary)
+                                )
+                        }
+                        .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
+                    }
+                    .padding()
+                    .background(Color.alyBackground)
                 }
-                .padding()
-                .background(Color.alyBackground)
             }
             .background(Color.alyBackground)
-            .navigationTitle("Chat with AlyAI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -89,92 +134,123 @@ struct ChatView: View {
     
     private func sendWelcomeMessage() {
         if chatStore.messages.isEmpty {
-            let currentFocus = userAnswers["current_focus"] as? String ?? "wellness"
-            let name = userSession.userName
-            let greeting = name.isEmpty ? "Hi!" : "Hi \(name)!"
-            
-            let welcome = "\(greeting) I'm AlyAI, your compassionate companion. I'm here to support you with \(currentFocus.lowercased()). What's on your mind today?"
-            
+            let welcome = personalizationContext.getPersonalizedGreeting() + " What would you like to talk about today?"
             chatStore.addMessage(welcome, isUser: false)
         }
     }
     
     private func sendMessage() {
-        guard !inputText.isEmpty else { return }
+        let trimmedInput = inputText.trimmingCharacters(in: .whitespaces)
         
-        let userMessage = inputText
+        guard !trimmedInput.isEmpty else { return }
+        guard trimmedInput.count <= 4000 else {
+            errorMessage = "Message is too long (maximum 4000 characters)"
+            return
+        }
+        
+        let userMessage = trimmedInput
         chatStore.addMessage(userMessage, isUser: true)
         inputText = ""
         isLoading = true
+        errorMessage = nil
         
         let conversationHistory = chatStore.messages.map { msg in
             "\(msg.isUser ? "User" : "AlyAI"): \(msg.content)"
         }.joined(separator: "\n")
         
-        let currentFocus = userAnswers["current_focus"] as? String ?? "general wellness"
-        let energyLevel = userAnswers["energy_level"] as? String ?? "moderate energy"
-        let activityHistory = ActivityManager.shared.getHistoryForOpenAI()
-        
-        let name = userSession.userName
-        
-        // Gender-aware Context: Inject Cycle Data if Female
-        var cycleContext = ""
-        if let gender = userAnswers["gender"] as? String, gender.caseInsensitiveCompare("female") == .orderedSame {
-            cycleContext = "\n" + CycleManager.shared.getCycleContextForAI()
-        }
+        // Build comprehensive personalized prompt
+        let personalizedContext = personalizationContext.buildAIContextString()
         
         let prompt = """
-        The user’s name is \(name).
-        Address the user by name naturally and warmly.
-        Do not use generic greetings such as ‘Hello Friend’ or ‘Hi there’ when a name is available.
-        
-        You are AlyAI, a compassionate AI life companion providing emotional, mental, and physical support.
-        
-        USER CONTEXT:
-        - Name: \(name)
-        - Current Priority: \(currentFocus)
-        - Energy Levels: \(energyLevel)\(cycleContext)
-        
-        RECENT ACTIVITY & INSIGHTS:
-        \(activityHistory)
+        \(personalizedContext)
         
         CONVERSATION HISTORY:
         \(conversationHistory)
         
-        Respond with empathy, validation, and practical guidance. 
-        Refer to the user's recent insights or completed actions if relevant to show continuity and awareness (e.g. "I see you meditated yesterday...").
-        Keep responses conversational (2-4 sentences). Be warm and supportive.
+        CURRENT USER MESSAGE: \(userMessage)
+        
+        RESPONSE GUIDELINES:
+        1. Respond with deep empathy and understanding
+        2. Reference their specific situation, goals, and needs
+        3. Make the response feel personal and tailored to them
+        4. Use their name naturally if appropriate
+        5. Consider their energy level and stress level when suggesting actions
+        6. Keep responses conversational (2-4 sentences typically)
+        7. Be warm, supportive, and non-judgmental
+        8. Avoid generic advice - everything must be specific to their context
         """
         
-        OpenAIService.shared.runAssessment(prompt: prompt) { response in
+        OpenAIService.shared.runAssessment(prompt: prompt) { [weak self] response in
             DispatchQueue.main.async {
-                chatStore.addMessage(response, isUser: false)
-                isLoading = false
+                self?.chatStore.addMessage(response, isUser: false)
+                self?.isLoading = false
             }
         }
     }
 }
 
-struct MessageBubble: View {
+// MARK: - Enhanced Message Bubble
+struct MessageBubble_Enhanced: View {
     let message: ChatMessage
+    let userName: String
     
     var body: some View {
-        HStack {
-            if message.isUser { Spacer() }
+        HStack(alignment: .bottom, spacing: 12) {
+            if message.isUser {
+                Spacer()
+            }
             
-            Text(message.content)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(message.isUser ? AnyShapeStyle(Color.alyPrimary) : AnyShapeStyle(Color.alyCard))
-                )
-                .foregroundColor(message.isUser ? .white : .alyTextPrimary)
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                if !message.isUser {
+                    Text("AlyAI")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.alyaiPrimary)
+                        .padding(.leading, 12)
+                }
+                
+                Text(message.content)
+                    .font(.body)
+                    .foregroundColor(message.isUser ? .white : .alyTextPrimary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        message.isUser
+                        ? Color.alyaiPrimary
+                        : Color.alyCard
+                    )
+                    .cornerRadius(16)
+                
+                Text(message.date.formatted(date: .omitted, time: .shortened))
+                    .font(.caption2)
+                    .foregroundColor(.alyTextSecondary)
+                    .padding(.horizontal, 12)
+            }
             
-            if !message.isUser { Spacer() }
+            if !message.isUser {
+                Spacer()
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+// MARK: - Helper Extension
+extension View {
+    func borderBottom(color: Color, width: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            self
+            Divider()
+                .background(color)
+                .frame(height: width)
         }
     }
 }
 
 #Preview {
-    ChatView(userAnswers: ["current_focus": "Managing stress or anxiety"], chatStore: ChatStore())
+    ChatView_Enhanced(
+        userAnswers: [:],
+        chatStore: ChatStore()
+    )
+    .environmentObject(UserSession())
 }

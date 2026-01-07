@@ -39,14 +39,14 @@ class AuthManager: ObservableObject {
                 }
             }
             
-            // 🔥 Handle login, including potential data migration
+            // Handle login, including potential data migration
             Task {
                 await FirestoreManager.shared.handleUserLogin()
             }
         }
     }
 
-    // ---- Google Sign In (UNCHANGED) ----
+    // MARK: - Google Sign In
     func signInWithGoogle(rootViewController: UIViewController, completion: @escaping (Bool) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             errorMessage = "Missing Client ID in Firebase Configuration."
@@ -61,7 +61,7 @@ class AuthManager: ObservableObject {
             guard error == nil,
                   let user = result?.user,
                   let idToken = user.idToken?.tokenString else {
-                self?.errorMessage = error?.localizedDescription
+                self?.errorMessage = error?.localizedDescription ?? "Unknown error occurred"
                 completion(false)
                 return
             }
@@ -82,7 +82,7 @@ class AuthManager: ObservableObject {
         }
     }
 
-    // ---- Apple Sign In (UNCHANGED LOGIC) ----
+    // MARK: - Apple Sign In
     func signInWithApple(authorization: ASAuthorization, completion: @escaping (Bool) -> Void) {
         guard
             let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
@@ -90,7 +90,7 @@ class AuthManager: ObservableObject {
             let appleIDToken = appleIDCredential.identityToken,
             let idTokenString = String(data: appleIDToken, encoding: .utf8)
         else {
-            errorMessage = "Apple Sign-In failed."
+            errorMessage = "Apple Sign-In failed. Please try again."
             completion(false)
             return
         }
@@ -111,6 +111,7 @@ class AuthManager: ObservableObject {
         }
     }
 
+    // MARK: - Link Apple Account (with safe error handling)
     func linkAppleAccount(authorization: ASAuthorization, completion: @escaping (Bool) -> Void) {
         guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
             errorMessage = "Apple Authorization failed."
@@ -119,20 +120,31 @@ class AuthManager: ObservableObject {
         }
 
         guard let nonce = currentNonce else {
-            fatalError("Invalid state: A login callback was received, but no login nonce was stored.")
+            errorMessage = "Invalid state: A login callback was received, but no login nonce was stored. Please try again."
+            print("❌ [AuthManager] Error: Nonce was not stored before Apple Sign-In callback")
+            completion(false)
+            return
         }
 
         guard let appleIDToken = appleIDCredential.identityToken else {
-            print("Unable to fetch identity token")
+            errorMessage = "Unable to fetch identity token. Please try again."
+            print("❌ [AuthManager] Unable to fetch identity token")
+            completion(false)
             return
         }
 
         guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-            print("Unable to serialize token string from data: \(appleIDCredential.debugDescription)")
+            errorMessage = "Unable to process identity token. Please try again."
+            print("❌ [AuthManager] Unable to serialize token string from data")
+            completion(false)
             return
         }
 
-        let credential = OAuthProvider.appleCredential(withIDToken: idTokenString, rawNonce: nonce, fullName: appleIDCredential.fullName)
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: appleIDCredential.fullName
+        )
 
         Auth.auth().currentUser?.link(with: credential) { (authResult, error) in
             if let error = error {
@@ -166,7 +178,6 @@ class AuthManager: ObservableObject {
 
             // 2. Clear Local Data
             UserProfileManager.shared.clearProfile()
-            // CycleManager.shared.clearData() // This is now handled by FirestoreManager.deleteUserData
             ActivityManager.shared.clearLogs()
             NotificationManager.shared.cancelAllNotifications()
             UserDefaults.standard.removeObject(forKey: "userName")
@@ -175,6 +186,7 @@ class AuthManager: ObservableObject {
             user.delete { error in
                 if let error = error {
                     print("❌ Error deleting auth user: \(error)")
+                    self.errorMessage = "Failed to delete account: \(error.localizedDescription)"
                     completion(false)
                 } else {
                     try? Auth.auth().signOut()
@@ -184,7 +196,7 @@ class AuthManager: ObservableObject {
         }
     }
 
-    // ---- Apple Nonce Helpers (UNCHANGED) ----
+    // MARK: - Apple Nonce Helpers
     func randomNonceString(length: Int = 32) -> String {
         let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
         var result = ""

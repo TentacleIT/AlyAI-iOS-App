@@ -1,597 +1,480 @@
 import SwiftUI
 
-struct Dashboard: View {
-    
-    @EnvironmentObject var userSession: UserSession
-    @ObservedObject private var profileManager = UserProfileManager.shared
-    @State private var selectedFeature: SupportPlanItem?
-    @State private var showFeatureDetail = false
+struct Dashboard_Enhanced: View {
+    @ObservedObject var personalizationContext = PersonalizationContext.shared
+    @ObservedObject var profileManager = UserProfileManager.shared
+    @ObservedObject var subscriptionManager = SubscriptionManager.shared
+    @State private var selectedTab: Int = 0
     @State private var showChat = false
-    @State private var showTalk = false
-    @State private var showFoodCalculator = false
-    @State private var showInsights = false
-    @State private var showScheduling = false
-    @State private var showProfile = false
-    @StateObject private var chatStore = ChatStore()
-    @ObservedObject private var activityManager = ActivityManager.shared
     
-    // Interactive Activity State
-    @State private var selectedAction: RecommendedAction?
-    @State private var showActivity = false
-    @State private var showCycleDashboard = false
-
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
-
-                headerSection
-                
-                aiHeroSection
-                
-                quickActionsSection
-
-                nutritionAndMealsSection // Moved here
-                
-                // Show Cycle Tracking for female users above Word of the Day
-                if let gender = profileManager.currentUserProfile?.userAnswers["gender"] as? String, gender.caseInsensitiveCompare("female") == .orderedSame {
-                    cycleTrackingSection
-                }
-
-                dailyWordSection
-
-                // The rest of the sections follow
-                
-                recommendedActionsSection
-                
-                SupportiveExercisesView()
-                
-                todaysInsightSection
-                
-                recentActivitySection
-                
-                supportPlanSection // Now only shows dynamic items
-
-                Spacer(minLength: 40)
-            }
-            .padding()
-        }
-        .background(Color.backgroundPrimary)
-        .sheet(isPresented: $showFeatureDetail) {
-            if let feature = selectedFeature, let userAnswers = profileManager.currentUserProfile?.userAnswers {
-                SupportFeatureDetailView(feature: feature, userAnswers: userAnswers)
-            }
-        }
-        .sheet(isPresented: $showChat) {
-            if let userAnswers = profileManager.currentUserProfile?.userAnswers {
-                ChatView(userAnswers: userAnswers, chatStore: chatStore)
-            }
-        }
-        .sheet(isPresented: $showTalk) {
-            if let userAnswers = profileManager.currentUserProfile?.userAnswers {
-                CallView(userAnswers: userAnswers, chatStore: chatStore)
-            }
-        }
-        .sheet(isPresented: $showFoodCalculator) {
-            FoodCalorieCalculatorView()
-        }
-        .sheet(isPresented: $showInsights) {
-            if let userAnswers = profileManager.currentUserProfile?.userAnswers {
-                InsightsView(userAnswers: userAnswers)
-            }
-        }
-        .sheet(isPresented: $showScheduling) {
-            SchedulingView()
-        }
-        .sheet(isPresented: $showProfile) {
-            ProfileView()
-        }
-        .fullScreenCover(isPresented: $showCycleDashboard) {
-            CycleTrackingDashboard()
-        }
-        .fullScreenCover(item: $selectedAction) { action in
-            InteractiveActivityView(
-                activityType: determineActivityType(for: action),
-                title: action.title,
-                description: action.description,
-                onComplete: { result in
-                    Task {
-                        await activityManager.logAction(
-                            title: action.title,
-                            relatedNeed: action.relatedNeed,
-                            userInput: result
-                        )
-                    }
-                }
-            )
-        }
-    }
-
-    // MARK: - Today's Insight
-    
-    @ViewBuilder
-    private var todaysInsightSection: some View {
-        if let insight = activityManager.todaysInsight {
-            DashboardCard(title: "Today's Insight", icon: "lightbulb.fill", iconColor: .warning) {
-                Text(insight.summary)
-                    .font(.subheadline)
-                    .foregroundColor(Color.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text(insight.supportingActions.isEmpty ? "Daily Motivation" : "Based on your actions today")
-                    .font(.caption)
-                    .foregroundColor(Color.textSecondary)
-                    .padding(.top, 2)
-            }
-        }
-    }
-
-    // MARK: - Recommended Actions
-    
-    @ViewBuilder
-    private var recommendedActionsSection: some View {
-        if let actions = profileManager.currentUserProfile?.assessmentResult.recommendedActions, !actions.isEmpty {
-            DashboardCard(title: "Your Recommended Actions", icon: "list.star", iconColor: .accentPrimary) {
-                ForEach(actions) { action in
-                    actionCard(action: action)
-                        .padding(.top, 8)
-                }
-            }
-        }
-    }
-    
-    private func actionCard(action: RecommendedAction) -> some View {
-        let isCompleted = activityManager.isActionCompletedToday(title: action.title)
-        
-        return VStack(alignment: .leading, spacing: 12) {
-            // Content remains the same, just the outer container is now the DashboardCard
-            HStack {
-                Text(action.title)
-                    .font(.headline)
-                    .foregroundColor(Color.textPrimary)
-                Spacer()
-                Text(action.priority.capitalized)
-                    .font(.caption).fontWeight(.bold)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(Capsule().fill(priorityColor(action.priority).opacity(0.2)))
-                    .foregroundColor(priorityColor(action.priority))
-            }
-            Text(action.description)
-                .font(.subheadline)
-                .foregroundColor(Color.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack {
-                if !action.suggestedFrequency.isEmpty {
-                    Label(action.suggestedFrequency, systemImage: "clock").font(.caption).foregroundColor(Color.textSecondary)
-                }
-                Spacer()
-                if isCompleted {
-                    // ... completed button
-                } else {
-                    Button("Start") { selectedAction = action }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.accentPrimary)
-                }
-            }
-            if !action.relatedNeed.isEmpty {
-                Text("Supports: " + action.relatedNeed).font(.caption2).foregroundColor(Color.textSecondary.opacity(0.8))
-            }
-        }
-        .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.backgroundPrimary))
-    }
-    
-    private func priorityColor(_ priority: String) -> Color {
-        switch priority.lowercased() {
-        case "high": return .error
-        case "medium": return .warning
-        default: return .accentPrimary
-        }
-    }
-
-    // MARK: - Header
-
-    private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("AlyAI")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(Color.textPrimary)
-
-                Text("Your AI life companion")
-                    .font(.subheadline)
-                    .foregroundColor(Color.textPrimary.opacity(0.8))
-            }
-
-            Spacer()
-
-            Button {
-                showProfile = true
-            } label: {
-                Circle()
-                    .fill(Color.surfacePrimary)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(Color.textPrimary)
-                    )
-            }
-        }
-    }
-
-    // MARK: - AI Hero Section (Inspired by Image)
-
-    private var aiHeroSection: some View {
-        let name = userSession.userName
-        
-        let hour = Calendar.current.component(.hour, from: Date())
-        let timeGreeting = hour < 12 ? "Good morning" : (hour < 18 ? "Good afternoon" : "Good evening")
-        
-        let displayGreeting = name.isEmpty ? timeGreeting : "\(timeGreeting), \(name)"
-
-        return RoundedRectangle(cornerRadius: 26)
-            .fill(Color.surfacePrimary)
-            .frame(height: 220)
-            .shadow(color: Color.shadow, radius: 10, x: 0, y: 5)
-            .overlay(
-                VStack(spacing: 20) {
-
-                    VStack(spacing: 6) {
-                        Text(displayGreeting)
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(Color.textPrimary)
+        ZStack {
+            Color.alyBackground.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // MARK: - Personalized Header
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(personalizationContext.getPersonalizedGreeting())
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.alyTextPrimary)
+                            
+                            Text(getContextualSubheading())
+                                .font(.caption)
+                                .foregroundColor(.alyTextSecondary)
+                        }
                         
-                        Text("I'm here for you. How would you like to connect?")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-
-                    HStack(spacing: 16) {
-
-                        aiPrimaryButton(
-                            title: "Talk to Me",
-                            subtitle: "Speak & vent",
-                            icon: "phone.fill",
-                            color: .alyaiEmotional // Emotional orange
-                        ) {
-                            showTalk = true
-                        }
-
-                        aiPrimaryButton(
-                            title: "Let us Chat",
-                            subtitle: "Type & reflect",
-                            icon: "bubble.left.and.bubble.right.fill",
-                            color: .alyaiMental // Core purple
-                        ) {
-                            showChat = true
+                        Spacer()
+                        
+                        // Quick stats indicator
+                        VStack(alignment: .trailing, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bolt.fill")
+                                    .font(.caption)
+                                Text(personalizationContext.energyLevel)
+                                    .font(.caption2)
+                            }
+                            .foregroundColor(.alyaiPhysical)
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: "moon.fill")
+                                    .font(.caption)
+                                Text(personalizationContext.sleepQuality)
+                                    .font(.caption2)
+                            }
+                            .foregroundColor(.alyaiMental)
                         }
                     }
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.alyaiPrimary.opacity(0.1),
+                                Color.alyaiEmotional.opacity(0.05)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(12)
                 }
                 .padding()
-            )
-    }
-
-    // MARK: - Cycle Tracking
-    
-    @ViewBuilder
-    private var cycleTrackingSection: some View {
-        // This view is already a card, just needs tap gesture
-        CycleTrackingView()
-            .onTapGesture { showCycleDashboard = true }
-    }
-
-    // MARK: - Daily Word
-
-    private var dailyWordSection: some View {
-        let name = userSession.userName
-        let quote = DailyWordManager.shared.getQuote(userName: name)
-        
-        return DashboardCard(title: "Word of the Day", icon: "quote.opening", iconColor: .accentPrimary) {
-            Text(quote)
-                .font(.system(.body, design: .serif))
-                .italic()
-                .foregroundColor(Color.textPrimary)
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Text("- Your Companion")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(Color.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-    }
-
-    // MARK: - Quick Actions (Inspired by Card Grid)
-
-    private var quickActionsSection: some View {
-        HStack(spacing: 16) {
-            dashboardActionCard(
-                title: "Scheduling",
-                subtitle: "Set reminders & structure",
-                icon: "calendar.badge.clock",
-                color: .alyaiPhysical // Productive green
-            ) { showScheduling = true }
-
-            dashboardActionCard(
-                title: "Calorie Calculator",
-                subtitle: "Snap & track meals",
-                icon: "camera.viewfinder",
-                color: .error // Health red
-            ) { showFoodCalculator = true }
-        }
-    }
-
-    // MARK: - Recent Activity
-
-    private var recentActivitySection: some View {
-        DashboardCard(title: "Recent Activity", icon: "bubble.left.and.bubble.right", iconColor: .alySecondary, hasMore: true, moreAction: {}) {
-            VStack(spacing: 12) {
-                recentChatRow(title: "Feeling mentally overwhelmed", subtitle: "We explored grounding strategies")
-                recentChatRow(title: "Planning a healthier routine", subtitle: "ALYAI suggested small steps")
-            }
-        }
-    }
-
-    // MARK: - Support Plan
-
-    @ViewBuilder
-    private var nutritionAndMealsSection: some View {
-        supportRow(
-            title: "Nutrition & Meals",
-            subtitle: "Flexible, non-restrictive guidance",
-            icon: "fork.knife",
-            color: .alyaiPhysical
-        )
-    }
-
-    @ViewBuilder
-    private var supportPlanSection: some View {
-        // Show this card only if there are dynamic support items
-        if let plan = profileManager.currentUserProfile?.supportPlan, !plan.isEmpty {
-            DashboardCard(title: "Your Support Areas", icon: "square.stack.3d.up.fill", iconColor: .alyaiPhysical) {
-                VStack(spacing: 14) {
-                    ForEach(plan) { item in
-                        supportRow(title: item.title, subtitle: item.description ?? "", icon: item.icon, color: .accentPrimary)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Reusable Components
-
-    private func aiPrimaryButton(
-        title: String,
-        subtitle: String? = nil,
-        icon: String,
-        color: Color = .accentPrimary,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(color)
-                    .padding(.bottom, 2)
                 
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold) // Sharper text
-                    .foregroundColor(Color.textPrimary)
-                
-                if let sub = subtitle {
-                    Text(sub)
-                        .font(.caption)
-                        .foregroundColor(Color.textSecondary)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .padding(.horizontal, 8)
-            .background(
-                ZStack {
-                    // Base shape
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(Color.backgroundPrimary)
-                    
-                    // Inner top highlight for sheen
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1.5
+                // MARK: - Quick Action Buttons
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        QuickActionButton(
+                            icon: "message.fill",
+                            title: "Talk to AlyAI",
+                            color: .alyaiPrimary,
+                            action: { showChat = true }
                         )
-                        .padding(1)
-
-                    // Subtle inner bottom shadow for depth
-                     VStack {
-                        Spacer()
-                        Rectangle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.clear, .black.opacity(0.04)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                        
+                        if personalizationContext.greatestNeeds.contains("Fitness") ||
+                           personalizationContext.primaryGoals.contains("Exercise") {
+                            QuickActionButton(
+                                icon: "figure.walk",
+                                title: "Activity",
+                                color: .alyaiPhysical,
+                                action: {}
                             )
-                            .frame(height: 10)
+                        }
+                        
+                        if personalizationContext.greatestNeeds.contains("Nutrition") ||
+                           personalizationContext.primaryGoals.contains("Nutrition") {
+                            QuickActionButton(
+                                icon: "fork.knife",
+                                title: "Nutrition",
+                                color: .alyaiPhysical,
+                                action: {}
+                            )
+                        }
+                        
+                        if personalizationContext.gender.lowercased() == "female" {
+                            QuickActionButton(
+                                icon: "heart.circle.fill",
+                                title: "Cycle",
+                                color: .alyaiEmotional,
+                                action: {}
+                            )
+                        }
+                        
+                        if personalizationContext.greatestNeeds.contains("Sleep") ||
+                           personalizationContext.sleepQuality.lowercased().contains("poor") {
+                            QuickActionButton(
+                                icon: "moon.zzz.fill",
+                                title: "Sleep",
+                                color: .alyaiMental,
+                                action: {}
+                            )
+                        }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .padding()
                 }
-                .shadow(color: Color.shadow.opacity(0.18), radius: 10, x: 0, y: 5) // Deeper shadow
-            )
-        }
-    }
-
-    private func dashboardActionCard(
-        title: String,
-        subtitle: String,
-        icon: String,
-        color: Color = .accentPrimary,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-
-                Image(systemName: icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(color)
-                    .padding(8)
-                    .background(Circle().fill(color.opacity(0.1)))
-
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(Color.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(Color.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 
-                Spacer(minLength: 0)
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 160)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.surfacePrimary)
-                    .shadow(color: Color.shadow, radius: 12, x: 0, y: 6)
-            )
-        }
-    }
-
-    private func recentChatRow(title: String, subtitle: String, isAction: Bool = false) -> some View {
-        HStack {
-            Image(systemName: isAction ? "checkmark.circle.fill" : "bubble.left.fill")
-                .font(.system(size: 16))
-                .foregroundColor(isAction ? Color.accentPrimary : Color.alySecondary)
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(Color.backgroundPrimary))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline).fontWeight(.medium).foregroundColor(Color.textPrimary)
-                Text(subtitle).font(.caption).foregroundColor(Color.textSecondary)
-            }
-            Spacer()
-            Image(systemName: "chevron.right").foregroundColor(Color.textSecondary)
-        }
-    }
-
-    private func determineActivityType(for action: RecommendedAction) -> ActivityType {
-        let title = action.title.lowercased()
-        let need = action.relatedNeed.lowercased()
-        
-        // Check specific activity types in title first
-        if title.contains("sleep") || title.contains("wind") {
-            return .sleep
-        } else if title.contains("breath") {
-            return .anxiety
-        } else if title.contains("meditat") || title.contains("mindful") {
-            return .mindfulness
-        } else if title.contains("think") || title.contains("thought") || title.contains("refram") {
-            return .cognitive
-        } else if title.contains("mood") || title.contains("track") {
-            return .mood
-        } else if title.contains("affirm") || title.contains("positive") {
-            return .affirmation
-        }
-        
-        // Fallback based on need
-        if need.contains("sleep") {
-            return .sleep
-        } else if need.contains("anxiety") || need.contains("panic") {
-            return .anxiety
-        } else if need.contains("overthinking") {
-            return .cognitive
-        }
-        
-        return .generic
-    }
-
-    private func supportRow(title: String, subtitle: String, icon: String, color: Color = .accentPrimary) -> some View {
-        Button {
-            selectedFeature = SupportPlanItem(title: title, icon: icon)
-            showFeatureDetail = true
-        } label: {
-            HStack(spacing: 14) {
-
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(color)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(color.opacity(0.1)))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(Color.textPrimary)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(Color.textSecondary)
+                // MARK: - Personalized Insights Section
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Current Focus Card
+                        PersonalizedInsightCard(
+                            title: "Your Current Focus",
+                            subtitle: personalizationContext.currentFocus,
+                            icon: "target",
+                            color: .alyaiPrimary,
+                            content: getContextualInsight()
+                        )
+                        
+                        // Stress & Energy Status
+                        HStack(spacing: 12) {
+                            PersonalizedMetricCard(
+                                title: "Stress Level",
+                                value: personalizationContext.stressLevel,
+                                icon: "brain.head.profile",
+                                color: .alyaiMental,
+                                recommendation: getStressRecommendation()
+                            )
+                            
+                            PersonalizedMetricCard(
+                                title: "Energy",
+                                value: personalizationContext.energyLevel,
+                                icon: "bolt.fill",
+                                color: .alyaiPhysical,
+                                recommendation: getEnergyRecommendation()
+                            )
+                        }
+                        
+                        // Goals Progress
+                        if !personalizationContext.primaryGoals.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Your Goals")
+                                    .font(.headline)
+                                    .foregroundColor(.alyTextPrimary)
+                                
+                                ForEach(personalizationContext.primaryGoals.prefix(3), id: \.self) { goal in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "checkmark.circle")
+                                            .foregroundColor(.alyaiPhysical)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(goal)
+                                                .font(.body)
+                                                .foregroundColor(.alyTextPrimary)
+                                            
+                                            Text(getGoalRecommendation(for: goal))
+                                                .font(.caption)
+                                                .foregroundColor(.alyTextSecondary)
+                                        }
+                                        
+                                        Spacer()
+                                    }
+                                    .padding()
+                                    .background(Color.alyCard)
+                                    .cornerRadius(12)
+                                }
+                            }
+                            .padding()
+                            .background(Color.alyCard)
+                            .cornerRadius(12)
+                        }
+                        
+                        // Needs-Based Recommendations
+                        if !personalizationContext.greatestNeeds.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Personalized for Your Needs")
+                                    .font(.headline)
+                                    .foregroundColor(.alyTextPrimary)
+                                
+                                ForEach(personalizationContext.greatestNeeds.prefix(2), id: \.self) { need in
+                                    NeedBasedRecommendationCard(need: need, context: personalizationContext)
+                                }
+                            }
+                            .padding()
+                            .background(Color.alyCard)
+                            .cornerRadius(12)
+                        }
+                    }
+                    .padding()
                 }
-
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(Color.textSecondary)
             }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.surfacePrimary)
-                    .shadow(color: Color.shadow, radius: 12, x: 0, y: 6)
-            )
+            
+            // Chat Sheet
+            if showChat {
+                ChatView_Enhanced(
+                    userAnswers: profileManager.currentUserProfile?.userAnswers ?? [:],
+                    chatStore: ChatStore()
+                )
+                .transition(.move(edge: .bottom))
+            }
+        }
+    }
+    
+    private func getContextualSubheading() -> String {
+        if personalizationContext.stressLevel.lowercased().contains("high") {
+            return "Let's focus on what matters most to you today"
+        } else if personalizationContext.energyLevel.lowercased().contains("low") {
+            return "Take it easy and be kind to yourself"
+        } else {
+            return "You're doing great! Keep up the momentum"
+        }
+    }
+    
+    private func getContextualInsight() -> String {
+        let focus = personalizationContext.currentFocus
+        let needs = personalizationContext.greatestNeeds
+        
+        if focus.lowercased().contains("mental") {
+            return "Focus on activities that calm your mind and reduce stress"
+        } else if focus.lowercased().contains("physical") {
+            return "Incorporate movement and nutrition that energizes you"
+        } else if needs.contains("Sleep") {
+            return "Prioritize rest and recovery for better overall wellness"
+        } else {
+            return "Balance is key - take care of your mind, body, and emotions"
+        }
+    }
+    
+    private func getStressRecommendation() -> String {
+        let level = personalizationContext.stressLevel.lowercased()
+        if level.contains("high") {
+            return "Try a breathing exercise or meditation"
+        } else if level.contains("moderate") {
+            return "Consider a short walk or stretching"
+        } else {
+            return "Keep maintaining your wellness routine"
+        }
+    }
+    
+    private func getEnergyRecommendation() -> String {
+        let level = personalizationContext.energyLevel.lowercased()
+        if level.contains("low") {
+            return "Rest or light activity recommended"
+        } else if level.contains("moderate") {
+            return "Good time for regular activities"
+        } else {
+            return "Great time for challenging activities"
+        }
+    }
+    
+    private func getGoalRecommendation(for goal: String) -> String {
+        let lowerGoal = goal.lowercased()
+        if lowerGoal.contains("fitness") || lowerGoal.contains("exercise") {
+            return "Schedule 30 minutes of your preferred activity"
+        } else if lowerGoal.contains("nutrition") || lowerGoal.contains("diet") {
+            return "Plan your meals based on your preferences"
+        } else if lowerGoal.contains("sleep") {
+            return "Maintain a consistent sleep schedule"
+        } else if lowerGoal.contains("stress") || lowerGoal.contains("anxiety") {
+            return "Practice mindfulness or relaxation techniques"
+        } else {
+            return "Take one small step toward this goal today"
         }
     }
 }
 
-struct DashboardCard<Content: View>: View {
-    let title: String
+// MARK: - Quick Action Button
+struct QuickActionButton: View {
     let icon: String
-    var iconColor: Color = .accentPrimary
-    var hasMore: Bool = false
-    var moreAction: (() -> Void)? = nil
-    @ViewBuilder let content: Content
+    let title: String
+    let color: Color
+    let action: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
+                
+                Text(title)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+            }
+            .frame(width: 80, height: 100)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [color, color.opacity(0.7)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Personalized Insight Card
+struct PersonalizedInsightCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let content: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label(title, systemImage: icon)
-                    .font(.headline)
-                    .foregroundColor(iconColor)
-                Spacer()
-                if hasMore {
-                    Button("View all") { moreAction?() }
-                        .font(.subheadline)
-                        .foregroundColor(.textSecondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.alyTextPrimary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(color)
+                        .fontWeight(.semibold)
                 }
+                
+                Spacer()
+                
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(color)
             }
             
-            content
+            Text(content)
+                .font(.body)
+                .foregroundColor(.alyTextSecondary)
+                .lineLimit(3)
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.surfacePrimary)
-                .shadow(color: Color.shadow.opacity(0.1), radius: 10, y: 5)
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    color.opacity(0.1),
+                    color.opacity(0.05)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Personalized Metric Card
+struct PersonalizedMetricCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    let recommendation: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.alyTextSecondary)
+                
+                Spacer()
+                
+                Image(systemName: icon)
+                    .foregroundColor(color)
+            }
+            
+            Text(value)
+                .font(.headline)
+                .foregroundColor(.alyTextPrimary)
+            
+            Text(recommendation)
+                .font(.caption2)
+                .foregroundColor(.alyTextSecondary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.alyCard)
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Need-Based Recommendation Card
+struct NeedBasedRecommendationCard: View {
+    let need: String
+    let context: PersonalizationContext
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(need)
+                    .font(.headline)
+                    .foregroundColor(.alyTextPrimary)
+                
+                Spacer()
+                
+                Image(systemName: getIconForNeed(need))
+                    .foregroundColor(getColorForNeed(need))
+            }
+            
+            Text(getRecommendationForNeed(need))
+                .font(.caption)
+                .foregroundColor(.alyTextSecondary)
+        }
+        .padding()
+        .background(Color.alyBackground)
+        .cornerRadius(8)
+    }
+    
+    private func getIconForNeed(_ need: String) -> String {
+        let lower = need.lowercased()
+        if lower.contains("fitness") || lower.contains("exercise") {
+            return "figure.walk"
+        } else if lower.contains("nutrition") || lower.contains("food") {
+            return "fork.knife"
+        } else if lower.contains("sleep") {
+            return "moon.zzz.fill"
+        } else if lower.contains("stress") || lower.contains("anxiety") {
+            return "brain.head.profile"
+        } else if lower.contains("social") || lower.contains("connection") {
+            return "person.2.fill"
+        } else {
+            return "heart.fill"
+        }
+    }
+    
+    private func getColorForNeed(_ need: String) -> Color {
+        let lower = need.lowercased()
+        if lower.contains("fitness") || lower.contains("exercise") {
+            return .alyaiPhysical
+        } else if lower.contains("stress") || lower.contains("anxiety") {
+            return .alyaiMental
+        } else {
+            return .alyaiEmotional
+        }
+    }
+    
+    private func getRecommendationForNeed(_ need: String) -> String {
+        let lower = need.lowercased()
+        let energyLevel = context.energyLevel.lowercased()
+        
+        if lower.contains("fitness") || lower.contains("exercise") {
+            if energyLevel.contains("low") {
+                return "Try light stretching or a short walk today"
+            } else {
+                return "Great time for your preferred workout"
+            }
+        } else if lower.contains("nutrition") || lower.contains("food") {
+            if context.dietaryPreferences.isEmpty {
+                return "Plan meals that nourish your body"
+            } else {
+                return "Enjoy meals that fit your preferences: \(context.dietaryPreferences.first ?? "")"
+            }
+        } else if lower.contains("sleep") {
+            return "Aim for 7-9 hours tonight for optimal recovery"
+        } else if lower.contains("stress") || lower.contains("anxiety") {
+            return "Practice a calming technique like meditation"
+        } else if lower.contains("social") || lower.contains("connection") {
+            return "Reach out to someone you care about"
+        } else {
+            return "Focus on this area that matters to you"
+        }
     }
 }
 
 #Preview {
-    Group {
-        Dashboard()
-            .environmentObject(UserSession())
-            .environmentObject(UserProfileManager.shared)
-        Dashboard()
-            .preferredColorScheme(.dark)
-            .environmentObject(UserSession())
-            .environmentObject(UserProfileManager.shared)
-    }
+    Dashboard_Enhanced()
 }
