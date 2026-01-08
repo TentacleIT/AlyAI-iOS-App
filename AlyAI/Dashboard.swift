@@ -318,7 +318,7 @@ struct Dashboard_Enhanced: View {
                         }
                         
                         // MARK: - Cycle Tracking (Female users only)
-                        if personalizationContext.gender.lowercased() == "female" {
+                        if personalizationContext.gender.lowercased().contains("female") || personalizationContext.gender.lowercased().contains("woman") {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Cycle Monitor")
                                     .font(.system(size: 22, weight: .bold))
@@ -475,7 +475,7 @@ struct Dashboard_Enhanced: View {
                 SchedulingView()
             }
             .fullScreenCover(isPresented: $showCycleDashboard) {
-                CycleTrackingDashboard()
+                CycleTrackingDashboard_Enhanced()
             }
             .sheet(isPresented: $showMealPlan) {
                 DailyMealPlanView()
