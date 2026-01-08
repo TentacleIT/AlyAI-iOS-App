@@ -6,7 +6,14 @@ struct Dashboard_Enhanced: View {
     @ObservedObject var subscriptionManager = SubscriptionManager.shared
     @State private var selectedTab: Int = 0
     @State private var showChat = false
+    @State private var showTalk = false
+    @State private var showFoodCalculator = false
+    @State private var showInsights = false
+    @State private var showScheduling = false
+    @State private var showCycleDashboard = false
     @State private var selectedMood: String? = nil
+    @StateObject private var chatStore = ChatStore()
+    @EnvironmentObject var userSession: UserSession
     
     var body: some View {
         ZStack {
@@ -122,6 +129,76 @@ struct Dashboard_Enhanced: View {
                         .shadow(color: Color.purple.opacity(0.3), radius: 10, x: 0, y: 5)
                         .padding(.horizontal, 20)
                         
+                        // MARK: - AI Hero Section (Talk & Chat)
+                        VStack(spacing: 16) {
+                            Text("I'm here for you. How would you like to connect?")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.black.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                            
+                            HStack(spacing: 16) {
+                                // Talk to Me Button
+                                Button(action: { showTalk = true }) {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "phone.fill")
+                                            .font(.system(size: 28))
+                                            .foregroundColor(.white)
+                                        Text("Talk to Me")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text("Speak & vent")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 1.0, green: 0.6, blue: 0.4),
+                                                Color(red: 1.0, green: 0.7, blue: 0.5)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .cornerRadius(16)
+                                    .shadow(color: Color.orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                                
+                                // Let us Chat Button
+                                Button(action: { showChat = true }) {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                                            .font(.system(size: 28))
+                                            .foregroundColor(.white)
+                                        Text("Let us Chat")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text("Type & reflect")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.55, green: 0.45, blue: 0.85),
+                                                Color(red: 0.65, green: 0.55, blue: 0.90)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .cornerRadius(16)
+                                    .shadow(color: Color.purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
                         // Personalized Insight Card
                         if !personalizationContext.currentFocus.isEmpty {
                             PersonalizedInsightCard(
@@ -184,6 +261,20 @@ struct Dashboard_Enhanced: View {
                                         action: {}
                                     )
                                     
+                                    QuickActionCard(
+                                        icon: "camera.viewfinder",
+                                        title: "Calorie\nCalculator",
+                                        color: Color(red: 1.0, green: 0.6, blue: 0.4),
+                                        action: { showFoodCalculator = true }
+                                    )
+                                    
+                                    QuickActionCard(
+                                        icon: "calendar.badge.clock",
+                                        title: "Scheduling",
+                                        color: Color(red: 0.50, green: 0.75, blue: 0.70),
+                                        action: { showScheduling = true }
+                                    )
+                                    
                                     if personalizationContext.greatestNeeds.contains("Fitness") {
                                         QuickActionCard(
                                             icon: "figure.walk",
@@ -195,6 +286,81 @@ struct Dashboard_Enhanced: View {
                                 }
                                 .padding(.horizontal, 20)
                             }
+                        }
+                        
+                        // MARK: - Cycle Tracking (Female users only)
+                        if personalizationContext.gender.lowercased() == "female" {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Cycle Monitor")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 20)
+                                
+                                CycleTrackingView()
+                                    .padding(.horizontal, 20)
+                                    .onTapGesture {
+                                        showCycleDashboard = true
+                                    }
+                            }
+                        }
+                        
+                        // MARK: - Word of the Day
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "quote.opening")
+                                    .foregroundColor(Color(red: 0.55, green: 0.45, blue: 0.85))
+                                Text("Word of the Day")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(DailyWordManager.shared.getQuote(userName: personalizationContext.userName))
+                                    .font(.system(.body, design: .serif))
+                                    .italic()
+                                    .foregroundColor(.black)
+                                    .lineSpacing(4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                
+                                Text("- Your Companion")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.black.opacity(0.6))
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // MARK: - Nutrition & Meals
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "fork.knife")
+                                    .foregroundColor(Color(red: 0.50, green: 0.75, blue: 0.70))
+                                Text("Nutrition & Meals")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Flexible, non-restrictive guidance")
+                                    .font(.subheadline)
+                                    .foregroundColor(.black.opacity(0.7))
+                                
+                                Text("Get personalized meal suggestions based on your preferences and goals")
+                                    .font(.caption)
+                                    .foregroundColor(.black.opacity(0.6))
+                            }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+                            .padding(.horizontal, 20)
                         }
                         
                         // Goals Progress
@@ -243,10 +409,28 @@ struct Dashboard_Enhanced: View {
                 }
             }
             .sheet(isPresented: $showChat) {
-                ChatView_Enhanced(
-                    userAnswers: profileManager.currentUserProfile?.userAnswers ?? [:],
-                    chatStore: ChatStore()
-                )
+                if let userAnswers = profileManager.currentUserProfile?.userAnswers {
+                    ChatView(userAnswers: userAnswers, chatStore: chatStore)
+                }
+            }
+            .sheet(isPresented: $showTalk) {
+                if let userAnswers = profileManager.currentUserProfile?.userAnswers {
+                    CallView(userAnswers: userAnswers, chatStore: chatStore)
+                }
+            }
+            .sheet(isPresented: $showFoodCalculator) {
+                FoodCalorieCalculatorView()
+            }
+            .sheet(isPresented: $showInsights) {
+                if let userAnswers = profileManager.currentUserProfile?.userAnswers {
+                    InsightsView(userAnswers: userAnswers)
+                }
+            }
+            .sheet(isPresented: $showScheduling) {
+                SchedulingView()
+            }
+            .fullScreenCover(isPresented: $showCycleDashboard) {
+                CycleTrackingDashboard()
             }
         }
     }
