@@ -288,74 +288,67 @@ struct MeditationVideoPlayerView: View {
     let onComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var hasCompleted = false
+    @State private var showManualComplete = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                // Video Player Placeholder
-                ZStack {
-                    LinearGradient(
-                        colors: [Color.purple.opacity(0.3), Color.blue.opacity(0.3)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    
-                    VStack(spacing: 16) {
-                        Image(systemName: video.category.icon)
-                            .font(.system(size: 80))
-                            .foregroundColor(.white)
-                        
-                        Text("Video Player")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                        
-                        Text("Meditation video would play here")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        // Simulate play button
-                        Button {
+            VStack(spacing: 0) {
+                // Real Video Player
+                if let videoURLString = video.videoURL,
+                   let videoURL = URL(string: videoURLString) {
+                    VideoPlayerView(videoURL: videoURL) {
+                        if !hasCompleted {
                             hasCompleted = true
                             onComplete()
-                        } label: {
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Mark as Complete")
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.purple)
-                            .cornerRadius(25)
+                            showManualComplete = true
                         }
                     }
-                }
-                .frame(height: 300)
-                .cornerRadius(20)
-                .padding()
-                
-                // Video Info
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(video.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    HStack {
-                        Label("\(video.duration) min", systemImage: "clock")
-                        Spacer()
-                        Label(video.category.rawValue, systemImage: video.category.icon)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // Fallback if no video URL
+                    ZStack {
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.3), Color.blue.opacity(0.3)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        
+                        VStack(spacing: 16) {
+                            Image(systemName: video.category.icon)
+                                .font(.system(size: 80))
+                                .foregroundColor(.white)
+                            
+                            Text("Video Not Available")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                            
+                            Text("This meditation video is currently unavailable.")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                            
+                            // Manual complete button
+                            Button {
+                                hasCompleted = true
+                                onComplete()
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text("Mark as Complete")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(Color.purple)
+                                .cornerRadius(25)
+                            }
+                        }
                     }
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    
-                    Text(video.description)
-                        .font(.body)
-                        .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .padding()
-                
-                Spacer()
             }
             .navigationTitle("Meditation")
             .navigationBarTitleDisplayMode(.inline)

@@ -255,6 +255,7 @@ class MeditationManager: ObservableObject {
                 duration: 10,
                 description: "Start your day with focus and clarity.",
                 category: .anxietyRelief,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
                 tags: ["morning", "calm", "anxiety"]
             ),
             MeditationVideo(
@@ -262,6 +263,7 @@ class MeditationManager: ObservableObject {
                 duration: 15,
                 description: "Release tension and find peace.",
                 category: .anxietyRelief,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
                 tags: ["anxiety", "release", "peace"]
             ),
             MeditationVideo(
@@ -269,6 +271,7 @@ class MeditationManager: ObservableObject {
                 duration: 5,
                 description: "Fast relief when you need it most.",
                 category: .anxietyRelief,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
                 tags: ["quick", "anxiety", "relief"]
             )
         ]
@@ -281,6 +284,7 @@ class MeditationManager: ObservableObject {
                 duration: 20,
                 description: "Drift into restful slumber.",
                 category: .sleepBetter,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
                 tags: ["sleep", "deep", "rest"]
             ),
             MeditationVideo(
@@ -288,6 +292,7 @@ class MeditationManager: ObservableObject {
                 duration: 15,
                 description: "Prepare your mind for sleep.",
                 category: .sleepBetter,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
                 tags: ["sleep", "bedtime", "relaxation"]
             ),
             MeditationVideo(
@@ -295,6 +300,7 @@ class MeditationManager: ObservableObject {
                 duration: 30,
                 description: "Extended meditation for deep rest.",
                 category: .sleepBetter,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
                 tags: ["sleep", "extended", "deep"]
             )
         ]
@@ -307,6 +313,7 @@ class MeditationManager: ObservableObject {
                 duration: 12,
                 description: "Find balance in daily life.",
                 category: .stressManagement,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
                 tags: ["stress", "relief", "balance"]
             ),
             MeditationVideo(
@@ -314,6 +321,7 @@ class MeditationManager: ObservableObject {
                 duration: 10,
                 description: "Let go of physical and mental tension.",
                 category: .stressManagement,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
                 tags: ["stress", "tension", "release"]
             ),
             MeditationVideo(
@@ -321,6 +329,7 @@ class MeditationManager: ObservableObject {
                 duration: 15,
                 description: "Quiet your racing thoughts.",
                 category: .stressManagement,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
                 tags: ["stress", "calm", "mind"]
             )
         ]
@@ -333,6 +342,7 @@ class MeditationManager: ObservableObject {
                 duration: 10,
                 description: "Sharpen your mental clarity.",
                 category: .focusClarity,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
                 tags: ["focus", "clarity", "concentration"]
             ),
             MeditationVideo(
@@ -340,6 +350,7 @@ class MeditationManager: ObservableObject {
                 duration: 8,
                 description: "Enhance your focus and productivity.",
                 category: .focusClarity,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
                 tags: ["focus", "productivity", "work"]
             )
         ]
@@ -352,6 +363,7 @@ class MeditationManager: ObservableObject {
                 duration: 15,
                 description: "Cultivate kindness within.",
                 category: .selfCompassion,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
                 tags: ["compassion", "kindness", "love"]
             ),
             MeditationVideo(
@@ -359,6 +371,7 @@ class MeditationManager: ObservableObject {
                 duration: 12,
                 description: "Embrace yourself with compassion.",
                 category: .selfCompassion,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
                 tags: ["self-love", "compassion", "acceptance"]
             )
         ]
@@ -371,6 +384,7 @@ class MeditationManager: ObservableObject {
                 duration: 8,
                 description: "Revitalize your mind and body.",
                 category: .energyBoost,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
                 tags: ["energy", "morning", "vitality"]
             ),
             MeditationVideo(
@@ -378,6 +392,7 @@ class MeditationManager: ObservableObject {
                 duration: 10,
                 description: "Beat the afternoon slump.",
                 category: .energyBoost,
+                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
                 tags: ["energy", "afternoon", "refresh"]
             )
         ]
