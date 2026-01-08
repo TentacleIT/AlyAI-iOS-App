@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import Combine
 
 // MARK: - Video Player View with AVPlayer
 
