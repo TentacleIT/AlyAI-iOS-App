@@ -161,13 +161,21 @@ class MeditationManager: ObservableObject {
         // Find videos in the library for this category
         let categoryVideos = meditationLibrary.first { $0.category == category }?.videos ?? []
         
+        print("📹 Getting video for category: \(category.rawValue)")
+        print("📚 Library has \(meditationLibrary.count) categories")
+        print("🎬 Found \(categoryVideos.count) videos for \(category.rawValue)")
+        
         // Return a random video from the category, or create a default one
         if let video = categoryVideos.randomElement() {
+            print("✅ Selected video: \(video.title) with URL: \(video.videoURL ?? "nil")")
             return video
         }
         
         // Fallback: create a default video
-        return createDefaultVideo(for: category)
+        print("⚠️ No videos in library, creating default video for \(category.rawValue)")
+        let defaultVideo = createDefaultVideo(for: category)
+        print("✅ Default video created with URL: \(defaultVideo.videoURL ?? "nil")")
+        return defaultVideo
     }
     
     private func createDefaultVideo(for category: MeditationCategory) -> MeditationVideo {
@@ -189,12 +197,21 @@ class MeditationManager: ObservableObject {
             .energyBoost: "Revitalize your body and awaken your spirit."
         ]
         
+        let videoURLs: [MeditationCategory: String] = [
+            .anxietyRelief: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+            .sleepBetter: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+            .stressManagement: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+            .focusClarity: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+            .selfCompassion: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+            .energyBoost: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        ]
+        
         return MeditationVideo(
             title: titles[category] ?? "Daily Meditation",
             duration: 10,
             description: descriptions[category] ?? "A guided meditation for your wellbeing.",
             category: category,
-            videoURL: nil, // Will be populated with actual video URLs
+            videoURL: videoURLs[category],
             thumbnailURL: nil,
             isDaily: true,
             tags: [category.rawValue]
