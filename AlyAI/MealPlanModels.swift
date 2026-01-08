@@ -65,8 +65,8 @@ struct Macronutrients: Codable {
     }
 }
 
-/// Complete daily meal plan
-struct DailyMealPlan: Identifiable, Codable {
+/// Complete daily meal plan (AI-generated version)
+struct AIDailyMealPlan: Identifiable, Codable {
     let id: UUID
     let date: Date
     let meals: [Meal]

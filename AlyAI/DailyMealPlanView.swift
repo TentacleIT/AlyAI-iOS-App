@@ -113,7 +113,7 @@ struct DailyMealPlanView: View {
     
     // MARK: - Meal Plan Content
     
-    private func mealPlanContent(_ mealPlan: DailyMealPlan) -> some View {
+    private func mealPlanContent(_ mealPlan: AIDailyMealPlan) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 // Header Card

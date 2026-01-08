@@ -1,10 +1,11 @@
 import Foundation
 import SwiftUI
+import Combine
 
 /// ViewModel for managing meal plan generation and state
 @MainActor
 class MealPlanViewModel: ObservableObject {
-    @Published var mealPlan: DailyMealPlan?
+    @Published var mealPlan: AIDailyMealPlan?
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -149,8 +150,8 @@ class MealPlanViewModel: ObservableObject {
         return max(1200, min(3000, baseCalories)) // Keep within reasonable range
     }
     
-    /// Convert API response to DailyMealPlan model
-    private func convertToMealPlan(_ response: MealPlanResponse) -> DailyMealPlan {
+    /// Convert API response to AIDailyMealPlan model
+    private func convertToMealPlan(_ response: MealPlanResponse) -> AIDailyMealPlan {
         let meals = response.meals.compactMap { mealResponse -> Meal? in
             guard let mealType = MealType(rawValue: mealResponse.type.capitalized) else {
                 return nil
@@ -171,6 +172,6 @@ class MealPlanViewModel: ObservableObject {
             )
         }
         
-        return DailyMealPlan(date: Date(), meals: meals)
+        return AIDailyMealPlan(date: Date(), meals: meals)
     }
 }
