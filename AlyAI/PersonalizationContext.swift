@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import FirebaseFirestore
 
 /// Comprehensive user context derived from onboarding answers
 /// This ensures all AI responses and recommendations are deeply personalized
