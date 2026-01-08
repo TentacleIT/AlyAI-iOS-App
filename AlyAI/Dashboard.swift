@@ -11,6 +11,7 @@ struct Dashboard_Enhanced: View {
     @State private var showInsights = false
     @State private var showScheduling = false
     @State private var showCycleDashboard = false
+    @State private var showMealPlan = false
     @State private var selectedMood: String? = nil
     @StateObject private var chatStore = ChatStore()
     @EnvironmentObject var userSession: UserSession
@@ -347,19 +348,34 @@ struct Dashboard_Enhanced: View {
                             }
                             .padding(.horizontal, 20)
                             
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Flexible, non-restrictive guidance")
-                                    .font(.subheadline)
-                                    .foregroundColor(.black.opacity(0.7))
-                                
-                                Text("Get personalized meal suggestions based on your preferences and goals")
-                                    .font(.caption)
-                                    .foregroundColor(.black.opacity(0.6))
+                            Button(action: { showMealPlan = true }) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Flexible, non-restrictive guidance")
+                                        .font(.subheadline)
+                                        .foregroundColor(.black.opacity(0.7))
+                                    
+                                    Text("Get personalized meal suggestions based on your preferences and goals")
+                                        .font(.caption)
+                                        .foregroundColor(.black.opacity(0.6))
+                                    
+                                    HStack {
+                                        Spacer()
+                                        Text("View Today's Meal Plan")
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Color(red: 0.50, green: 0.75, blue: 0.70))
+                                        Image(systemName: "arrow.right.circle.fill")
+                                            .foregroundColor(Color(red: 0.50, green: 0.75, blue: 0.70))
+                                    }
+                                    .padding(.top, 4)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(20)
+                                .background(Color.white)
+                                .cornerRadius(16)
+                                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
                             }
-                            .padding(20)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+                            .buttonStyle(PlainButtonStyle())
                             .padding(.horizontal, 20)
                         }
                         
@@ -431,6 +447,9 @@ struct Dashboard_Enhanced: View {
             }
             .fullScreenCover(isPresented: $showCycleDashboard) {
                 CycleTrackingDashboard()
+            }
+            .sheet(isPresented: $showMealPlan) {
+                DailyMealPlanView()
             }
         }
     }
