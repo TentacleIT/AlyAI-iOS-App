@@ -107,7 +107,7 @@ struct CycleTrackingDashboard_Enhanced: View {
                     .font(.system(size: 24))
                     .foregroundColor(primaryColor)
                 
-                Text("Day \(manager.currentCycleDay) of \(manager.metadata.cycleLength)")
+                Text("Day \(manager.currentDayInCycle) of \(manager.metadata.cycleLength)")
                     .font(.title2)
                     .fontWeight(.bold)
             }
