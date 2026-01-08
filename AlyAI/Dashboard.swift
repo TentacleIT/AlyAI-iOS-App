@@ -234,10 +234,31 @@ struct Dashboard_Enhanced: View {
                         
                         // Quick Actions (Mockup style horizontal buttons)
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Quick Actions")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
+                            HStack {
+                                Text("Quick Actions")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                Spacer()
+                                
+                                // Scroll indicator
+                                HStack(spacing: 4) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.gray.opacity(0.6))
+                                    Text("Swipe")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.gray)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.gray.opacity(0.6))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(12)
+                            }
+                            .padding(.horizontal, 20)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
@@ -284,8 +305,13 @@ struct Dashboard_Enhanced: View {
                                             action: {}
                                         )
                                     }
+                                    
+                                    // Spacer to show partial next card
+                                    Spacer()
+                                        .frame(width: 40)
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.leading, 20)
+                                .padding(.trailing, 0)
                             }
                         }
                         
