@@ -13,6 +13,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         // Configure Firebase
         FirebaseApp.configure()
         
+        // Detect user's current location for personalization
+        Task { @MainActor in
+            LocationService.shared.detectCurrentLocation()
+        }
+        
         // Configure App Check
         #if DEBUG
         // Use debug provider for development/simulator

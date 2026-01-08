@@ -11,16 +11,35 @@ class MealPlanViewModel: ObservableObject {
     
     private let personalizationContext = PersonalizationContext.shared
     private let openAIService = OpenAIService.shared
+    private let locationService = LocationService.shared
     
     /// Generate a new meal plan based on user profile
     func generateMealPlan() {
         isLoading = true
         errorMessage = nil
         
+        // Detect current location first
+        if locationService.currentCountry.isEmpty {
+            locationService.detectCurrentLocation()
+            // Wait a moment for location detection
+            Task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                await continueGeneratingMealPlan()
+            }
+        } else {
+            Task {
+                await continueGeneratingMealPlan()
+            }
+        }
+    }
+    
+    /// Continue meal plan generation after location is detected
+    private func continueGeneratingMealPlan() async {
         let prompt = buildMealPlanPrompt()
         
         print("🍽️ [MealPlanViewModel] Generating meal plan...")
-        print("📍 Location: \(personalizationContext.country)")
+        print("📍 Current Location: \(locationService.currentCountry.isEmpty ? "Detecting..." : locationService.currentCountry)")
+        print("📍 Profile Country: \(personalizationContext.country)")
         print("🎯 Goals: \(personalizationContext.primaryGoals.joined(separator: ", "))")
         
         openAIService.runAssessment(prompt: prompt, jsonMode: true) { [weak self] response in
@@ -71,7 +90,12 @@ class MealPlanViewModel: ObservableObject {
         let needs = personalizationContext.greatestNeeds.isEmpty ? ["balanced nutrition"] : personalizationContext.greatestNeeds
         let dietary = personalizationContext.dietaryPreferences.isEmpty ? ["no restrictions"] : personalizationContext.dietaryPreferences
         let allergies = personalizationContext.allergies.isEmpty ? "none" : personalizationContext.allergies.joined(separator: ", ")
-        let country = personalizationContext.country.isEmpty ? "Global" : personalizationContext.country
+        // Use current location from LocationService (where user is now)
+        // NOT nationality (where user is from)
+        let currentLocation = locationService.currentCountry.isEmpty ? 
+            (personalizationContext.country.isEmpty ? "Global" : personalizationContext.country) : 
+            locationService.currentCountry
+        let country = currentLocation
         
         // Determine calorie target based on goals
         let calorieTarget = determineCalorieTarget(age: age, gender: gender, goals: goals)
@@ -90,14 +114,17 @@ class MealPlanViewModel: ObservableObject {
         - Target Daily Calories: ~\(calorieTarget) kcal
         
         REQUIREMENTS:
-        1. Create meals that are culturally appropriate for \(country)
-        2. If in Nigeria, use Nigerian/West African foods (e.g., Jollof Rice, Egusi Soup, Moi Moi, Plantain, etc.)
-        3. If elsewhere, use foods common and available in that region
-        4. Respect all dietary preferences and allergies
-        5. Align with health goals (weight loss, muscle gain, wellness, etc.)
-        6. Provide realistic, achievable meals
-        7. Include breakfast, lunch, dinner, and optionally 1 snack
-        8. Calculate accurate calories and macronutrients
+        1. Create meals that are culturally appropriate for \(country) (where the user is CURRENTLY LIVING)
+        2. Use foods that are commonly available in \(country)
+        3. If in Nigeria, use Nigerian/West African foods (e.g., Jollof Rice, Egusi Soup, Moi Moi, Plantain, etc.)
+        4. If in Canada, use Canadian/North American foods (e.g., Maple Salmon, Poutine, Caesar Salad, etc.)
+        5. If in USA, use American foods (e.g., Grilled Chicken, Quinoa Bowls, Burgers, etc.)
+        6. If elsewhere, use foods common and available in that specific region
+        7. Respect all dietary preferences and allergies
+        8. Align with health goals (weight loss, muscle gain, wellness, etc.)
+        9. Provide realistic, achievable meals
+        10. Include breakfast, lunch, dinner, and optionally 1 snack
+        11. Calculate accurate calories and macronutrients
         
         OUTPUT FORMAT (JSON):
         {
