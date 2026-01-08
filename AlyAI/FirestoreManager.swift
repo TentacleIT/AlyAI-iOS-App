@@ -20,11 +20,15 @@ class FirestoreManager {
             }
 
             await createOrUpdateUserProfile(uid: user.uid)
+            
+            // Check if PersonalizationContext needs migration
+            await migratePersonalizationContextIfNeeded(for: user.uid)
 
         } catch {
             print("Error checking for user metadata: \(error). Assuming new user and migrating.")
             await migrateLocalDataToFirestore(for: user.uid)
             await createOrUpdateUserProfile(uid: user.uid)
+            await migratePersonalizationContextIfNeeded(for: user.uid)
         }
     }
 
@@ -170,6 +174,30 @@ class FirestoreManager {
         }
     }
 
+    /// Migrate PersonalizationContext for existing users who have profile but no personalization document
+    private func migratePersonalizationContextIfNeeded(for uid: String) async {
+        // Check if personalization document exists
+        let personalizationDoc = try? await db.collection("users").document(uid).collection("personalization").document("context").getDocument()
+        
+        if personalizationDoc?.exists == true {
+            print("✅ PersonalizationContext already exists, no migration needed")
+            return
+        }
+        
+        // Check if profile exists
+        guard let profileDoc = try? await db.collection("users").document(uid).collection("profile").document("main").getDocument(),
+              profileDoc.exists else {
+            print("⚠️ No profile found for PersonalizationContext migration")
+            return
+        }
+        
+        print("🔄 Migrating PersonalizationContext for existing user")
+        
+        // PersonalizationContext will auto-load from profile and save to Firestore
+        // when UserProfileManager loads the profile and triggers the isProfileLoaded event
+        // No explicit action needed here - the reactive system handles it
+    }
+    
     func deleteUserData(for uid: String) async {
         print("🗑️ Deleting user data for \(uid)...")
 

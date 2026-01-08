@@ -78,6 +78,11 @@ class LocationService: NSObject, ObservableObject {
                     
                     // Update PersonalizationContext
                     PersonalizationContext.shared.country = country
+                    
+                    // Save to Firestore
+                    Task {
+                        await PersonalizationContext.shared.saveToFirestore()
+                    }
                 } else {
                     print("⚠️ [LocationService] No country found in placemark")
                     self.detectCountryFromLocale()
