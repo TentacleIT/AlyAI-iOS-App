@@ -280,43 +280,90 @@ struct AssessmentResult: Codable {
 // MARK: - Therapist Voice Models
 
 enum TherapistVoiceOption: String, CaseIterable, Identifiable, Codable {
-    case sarah = "sarah_female"
-    case daniel = "daniel_male"
+    // New OpenAI TTS voices (all 6 options)
+    case alloy = "alloy_neutral"
+    case echo = "echo_male"
+    case fable = "fable_female"
+    case onyx = "onyx_male"
+    case nova = "nova_female"
+    case shimmer = "shimmer_female"
+    
+    // Legacy cases for backward compatibility
+    case sarah = "sarah_female"  // Maps to shimmer
+    case daniel = "daniel_male"   // Maps to onyx
     
     var id: String { rawValue }
     
     var displayName: String {
         switch self {
-        case .sarah: return "Sarah"
-        case .daniel: return "Daniel"
+        case .alloy: return "Alloy"
+        case .echo: return "Echo"
+        case .fable: return "Fable"
+        case .onyx: return "Onyx"
+        case .nova: return "Nova"
+        case .shimmer: return "Shimmer"
+        case .sarah: return "Sarah (Shimmer)"  // Legacy
+        case .daniel: return "Daniel (Onyx)"    // Legacy
         }
     }
     
     var gender: String {
         switch self {
-        case .sarah: return "Female"
-        case .daniel: return "Male"
+        case .alloy: return "Neutral"
+        case .echo: return "Male"
+        case .fable: return "Female"
+        case .onyx: return "Male"
+        case .nova: return "Female"
+        case .shimmer: return "Female"
+        case .sarah: return "Female"  // Legacy
+        case .daniel: return "Male"    // Legacy
         }
     }
     
     var tone: String {
         switch self {
-        case .sarah: return "Calm & Reassuring"
-        case .daniel: return "Deep & Grounded"
+        case .alloy: return "Balanced & Clear"
+        case .echo: return "Warm & Friendly"
+        case .fable: return "Gentle & Soothing"
+        case .onyx: return "Deep & Grounded"
+        case .nova: return "Energetic & Uplifting"
+        case .shimmer: return "Calm & Reassuring"
+        case .sarah: return "Calm & Reassuring"  // Legacy
+        case .daniel: return "Deep & Grounded"    // Legacy
         }
     }
     
     var providerVoiceKey: String {
         switch self {
-        case .sarah: return "shimmer"
-        case .daniel: return "onyx"
+        case .alloy: return "alloy"
+        case .echo: return "echo"
+        case .fable: return "fable"
+        case .onyx: return "onyx"
+        case .nova: return "nova"
+        case .shimmer: return "shimmer"
+        case .sarah: return "shimmer"  // Legacy maps to shimmer
+        case .daniel: return "onyx"     // Legacy maps to onyx
         }
     }
     
     var description: String {
         switch self {
-        case .sarah: return "A warm, empathetic voice that offers comfort and understanding."
-        case .daniel: return "A steady, supportive voice that helps you feel grounded and safe."
+        case .alloy:
+            return "A neutral, balanced voice that adapts to any situation with clarity and precision."
+        case .echo:
+            return "A warm, friendly male voice that creates an inviting and supportive atmosphere."
+        case .fable:
+            return "A gentle, soothing female voice that brings comfort and peace to your sessions."
+        case .onyx:
+            return "A deep, grounded male voice that provides stability and confidence."
+        case .nova:
+            return "An energetic, uplifting female voice that inspires positivity and motivation."
+        case .shimmer:
+            return "A calm, reassuring female voice that offers empathy and understanding."
+        case .sarah:
+            return "A warm, empathetic voice that offers comfort and understanding. (Legacy)"
+        case .daniel:
+            return "A steady, supportive voice that helps you feel grounded and safe. (Legacy)"
         }
     }
 }

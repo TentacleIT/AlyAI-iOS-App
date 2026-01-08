@@ -287,7 +287,7 @@ struct ProfileView: View {
                             .foregroundColor(Color.textPrimary)
                         Spacer()
                         
-                        Text(profileManager.voicePreference.voiceId.contains("sarah") ? "Sarah" : "Daniel")
+                        Text(getVoiceDisplayName(profileManager.voicePreference.voiceId))
                             .font(.subheadline)
                             .foregroundColor(Color.textSecondary)
                         
@@ -548,6 +548,22 @@ struct ProfileView: View {
             return "\(version) (\(build))"
         }
         return "1.0.0"
+    }
+    
+    private func getVoiceDisplayName(_ voiceId: String) -> String {
+        // Try to find matching voice option
+        if let voice = TherapistVoiceOption.allCases.first(where: { $0.id == voiceId }) {
+            return voice.displayName
+        }
+        
+        // Fallback: try to match by provider key
+        let providerKey = profileManager.voicePreference.providerVoiceKey
+        if let voice = TherapistVoiceOption.allCases.first(where: { $0.providerVoiceKey == providerKey }) {
+            return voice.displayName
+        }
+        
+        // Final fallback
+        return "Unknown"
     }
     
     // MARK: - Actions
