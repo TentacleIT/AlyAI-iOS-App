@@ -110,23 +110,41 @@ class MeditationManager: ObservableObject {
         let context = PersonalizationContext.shared
         let profile = UserProfileManager.shared.currentUserProfile
         
-        // Determine best category based on user's needs
-        let category = determineBestCategory(for: context)
+        print("🎯 Generating daily meditation for \(context.userName)")
+        print("📋 User needs: \(context.greatestNeeds)")
+        print("🎯 Current focus: \(context.currentFocus)")
         
-        // Get a video from that category
-        guard let video = getVideoForCategory(category) else {
-            print("❌ No video found for category: \(category)")
+        // Try to get personalized video based on user's specific needs
+        var video: MeditationVideo?
+        
+        // Option 1: Try personalized content service (YouTube/OpenAI)
+        if !context.greatestNeeds.isEmpty || !context.currentFocus.isEmpty {
+            print("🔍 Searching for personalized meditation content...")
+            video = await PersonalizedMeditationService.shared.selectPersonalizedVideo(for: context)
+        }
+        
+        // Option 2: Fallback to category-based selection
+        if video == nil {
+            print("⚠️ No personalized content found, using category-based selection")
+            let category = determineBestCategory(for: context)
+            video = getVideoForCategory(category)
+        }
+        
+        guard let selectedVideo = video else {
+            print("❌ No video found")
             return
         }
         
-        // Generate personalized message using AI
-        let message = await generatePersonalizedMessage(for: context, category: category)
+        print("✅ Selected video: \(selectedVideo.title)")
+        
+        // Generate personalized message
+        let message = await generatePersonalizedMessage(for: context, video: selectedVideo)
         
         // Create daily meditation
         let daily = DailyMeditation(
-            video: video,
+            video: selectedVideo,
             personalizedMessage: message,
-            recommendedTime: determineRecommendedTime(for: category)
+            recommendedTime: determineRecommendedTime(for: selectedVideo.category)
         )
         
         self.dailyMeditation = daily
@@ -218,11 +236,17 @@ class MeditationManager: ObservableObject {
         )
     }
     
-    private func generatePersonalizedMessage(for context: PersonalizationContext, category: MeditationCategory) async -> String {
+    private func generatePersonalizedMessage(for context: PersonalizationContext, video: MeditationVideo) async -> String {
         let userName = context.userName.isEmpty ? "there" : context.userName
         let timeOfDay = getTimeOfDay()
         
-        // Simple personalized messages based on category
+        // If user has specific needs, create highly personalized message
+        if !context.greatestNeeds.isEmpty {
+            let needs = context.greatestNeeds.prefix(2).joined(separator: " and ")
+            return "Good \(timeOfDay), \(userName). This meditation is specially selected to help you with \(needs). Take this time for yourself."
+        }
+        
+        // Fallback: category-based messages
         let messages: [MeditationCategory: String] = [
             .anxietyRelief: "Good \(timeOfDay), \(userName). Take a moment to breathe and release any tension you're holding.",
             .sleepBetter: "Good \(timeOfDay), \(userName). Prepare your mind and body for deep, restful sleep.",
@@ -232,7 +256,7 @@ class MeditationManager: ObservableObject {
             .energyBoost: "Good \(timeOfDay), \(userName). Let's awaken your energy and vitality."
         ]
         
-        return messages[category] ?? "Good \(timeOfDay), \(userName). Take this time for yourself."
+        return messages[video.category] ?? "Good \(timeOfDay), \(userName). Take this time for yourself."
     }
     
     private func determineRecommendedTime(for category: MeditationCategory) -> String {
