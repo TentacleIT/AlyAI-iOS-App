@@ -67,7 +67,22 @@ struct BreathingExercisesView: View {
             }
         }
         .sheet(item: $selectedExercise) { exercise in
-            BreathingSessionView(exercise: exercise)
+            AnimatedBreathingGuideView(technique: mapExerciseToTechnique(exercise))
+        }
+    }
+    
+    private func mapExerciseToTechnique(_ exercise: BreathingExercise) -> BreathingTechnique {
+        switch exercise.title {
+        case "Box Breathing":
+            return .boxBreathing
+        case "4-7-8 Breathing":
+            return .breathing478
+        case "Deep Belly Breathing":
+            return .deepBelly
+        case "Alternate Nostril":
+            return .alternateNostril
+        default:
+            return .boxBreathing
         }
     }
     
