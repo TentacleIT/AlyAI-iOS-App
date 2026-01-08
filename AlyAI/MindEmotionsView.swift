@@ -154,9 +154,9 @@ struct MindEmotionsView: View {
             Text("Emotional Wellness Tips")
                 .font(.headline)
             
-            TipRow(icon: "heart.fill", title: "Practice Gratitude", description: "List 3 things you're grateful for", color: .red)
-            TipRow(icon: "figure.mind.and.body", title: "Mindful Breathing", description: "Take 5 deep breaths when stressed", color: .alyaiEmotional)
-            TipRow(icon: "person.2.fill", title: "Connect with Others", description: "Reach out to a friend or loved one", color: .blue)
+            MindEmotionsTipRow(icon: "heart.fill", title: "Practice Gratitude", description: "List 3 things you're grateful for", color: .red)
+            MindEmotionsTipRow(icon: "figure.mind.and.body", title: "Mindful Breathing", description: "Take 5 deep breaths when stressed", color: .alyaiEmotional)
+            MindEmotionsTipRow(icon: "person.2.fill", title: "Connect with Others", description: "Reach out to a friend or loved one", color: .blue)
         }
     }
     
@@ -409,7 +409,7 @@ struct JournalCard: View {
     }
 }
 
-struct TipRow: View {
+struct MindEmotionsTipRow: View {
     let icon: String
     let title: String
     let description: String

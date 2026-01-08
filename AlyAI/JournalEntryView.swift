@@ -124,10 +124,10 @@ struct JournalEntryView: View {
                             .font(.headline)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            TipRow(icon: "lightbulb.fill", text: "Write freely without judgment")
-                            TipRow(icon: "heart.fill", text: "Focus on your feelings and emotions")
-                            TipRow(icon: "star.fill", text: "Note what you're grateful for")
-                            TipRow(icon: "target", text: "Set intentions for tomorrow")
+                            JournalTipRow(icon: "lightbulb.fill", text: "Write freely without judgment")
+                            JournalTipRow(icon: "heart.fill", text: "Focus on your feelings and emotions")
+                            JournalTipRow(icon: "star.fill", text: "Note what you're grateful for")
+                            JournalTipRow(icon: "target", text: "Set intentions for tomorrow")
                         }
                     }
                     .padding()
@@ -168,7 +168,7 @@ struct JournalEntryView: View {
     }
 }
 
-struct TipRow: View {
+struct JournalTipRow: View {
     let icon: String
     let text: String
     
