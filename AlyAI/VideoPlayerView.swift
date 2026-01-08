@@ -39,25 +39,51 @@ class PlayerViewModel: ObservableObject {
     let player: AVPlayer
     var onComplete: (() -> Void)?
     private var timeObserver: Any?
+    private var statusObserver: NSKeyValueObservation?
     
     init(url: URL) {
-        self.player = AVPlayer(url: url)
-        setupNotifications()
+        print("🎬 Initializing player with URL: \(url)")
+        let playerItem = AVPlayerItem(url: url)
+        self.player = AVPlayer(playerItem: playerItem)
+        setupObservers()
     }
     
     deinit {
         if let observer = timeObserver {
             player.removeTimeObserver(observer)
         }
+        statusObserver?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
     
-    private func setupNotifications() {
+    private func setupObservers() {
+        // Observe player item status
+        statusObserver = player.currentItem?.observe(\.status, options: [.new, .old]) { [weak self] item, change in
+            switch item.status {
+            case .readyToPlay:
+                print("✅ Video ready to play")
+            case .failed:
+                print("❌ Video failed to load: \(item.error?.localizedDescription ?? "Unknown error")")
+            case .unknown:
+                print("⏳ Video status unknown")
+            @unknown default:
+                break
+            }
+        }
+        
         // Observe when video finishes
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(videoDidFinish),
             name: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem
+        )
+        
+        // Observe playback errors
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(videoPlaybackError),
+            name: .AVPlayerItemFailedToPlayToEndTime,
             object: player.currentItem
         )
     }
@@ -67,11 +93,19 @@ class PlayerViewModel: ObservableObject {
         onComplete?()
     }
     
+    @objc private func videoPlaybackError(notification: Notification) {
+        if let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error {
+            print("❌ Video playback error: \(error.localizedDescription)")
+        }
+    }
+    
     func play() {
+        print("▶️ Playing video")
         player.play()
     }
     
     func pause() {
+        print("⏸️ Pausing video")
         player.pause()
     }
 }
