@@ -61,9 +61,48 @@ class UserProfileManager: ObservableObject {
             self.currentUserProfile = profile
             self.isProfileLoaded = true
             print("✅ Profile saved and loaded")
+            
+            // Update PersonalizationContext with onboarding data
+            await updatePersonalizationContext(from: answers, result: result)
         } catch {
             print("❌ Error saving profile: \(error)")
         }
+    }
+    
+    /// Update PersonalizationContext with data from onboarding
+    private func updatePersonalizationContext(from answers: [String: Any], result: AssessmentResult) async {
+        let context = PersonalizationContext.shared
+        
+        // Extract greatest needs from onboarding answers
+        if let selectedTitles = answers["greatest_need"] as? [String], !selectedTitles.isEmpty {
+            context.greatestNeeds = selectedTitles
+            print("🎯 Updated greatestNeeds: \(selectedTitles)")
+        }
+        
+        // Extract current focus from goals or achievement
+        if let goals = answers["goals"] as? String, !goals.isEmpty {
+            context.currentFocus = goals
+            print("🎯 Updated currentFocus: \(goals)")
+        } else if let achievement = answers["desired_achievement"] as? String, !achievement.isEmpty {
+            context.currentFocus = achievement
+            print("🎯 Updated currentFocus from achievement: \(achievement)")
+        }
+        
+        // Extract user name
+        if let name = answers["name"] as? String, !name.isEmpty {
+            context.userName = name
+            print("👤 Updated userName: \(name)")
+        }
+        
+        // Extract gender
+        if let gender = answers["gender"] as? String, !gender.isEmpty {
+            context.gender = gender
+            print("♀️ Updated gender: \(gender)")
+        }
+        
+        // Save PersonalizationContext to Firestore
+        await context.saveToFirestore()
+        print("✅ PersonalizationContext saved to Firestore with onboarding data")
     }
     
     func loadProfile() async {
