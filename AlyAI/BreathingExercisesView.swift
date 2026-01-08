@@ -151,8 +151,8 @@ struct BreathingExerciseCard: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                    .fill(Color(uiColor: .systemBackground))
+                    .shadow(color: Color(uiColor: .label).opacity(0.05), radius: 8, x: 0, y: 4)
             )
         }
     }
@@ -210,7 +210,7 @@ struct BreathingSessionView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(.systemGray6))
+                            .fill(Color(uiColor: .secondarySystemBackground))
                     )
                     .padding(.horizontal)
                     
@@ -271,7 +271,7 @@ struct BreathingTipCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
+                .fill(Color(uiColor: .secondarySystemBackground))
         )
     }
 }

@@ -60,7 +60,7 @@ struct CycleTrackingDashboard_Enhanced: View {
             }
             .background(
                 LinearGradient(
-                    colors: [Color.white, secondaryColor.opacity(0.1)],
+                    colors: [Color(uiColor: .systemBackground), secondaryColor.opacity(0.1)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -139,9 +139,9 @@ struct CycleTrackingDashboard_Enhanced: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(uiColor: .systemBackground))
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color(uiColor: .label).opacity(0.05), radius: 10, x: 0, y: 5)
         .padding(.horizontal)
     }
     
@@ -234,9 +234,9 @@ struct CycleTrackingDashboard_Enhanced: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(uiColor: .systemBackground))
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color(uiColor: .label).opacity(0.05), radius: 10, x: 0, y: 5)
         .padding(.horizontal)
     }
     
@@ -256,7 +256,7 @@ struct CycleTrackingDashboard_Enhanced: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.5))
+        .background(Color(uiColor: .systemBackground).opacity(0.5))
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -273,19 +273,19 @@ struct CycleTrackingDashboard_Enhanced: View {
                 // Flow
                 PeriodFlowTrackerView()
                     .padding()
-                    .background(Color.white)
+                    .background(Color(uiColor: .systemBackground))
                     .cornerRadius(16)
                 
                 // Mood & Energy
                 MoodEnergyTrackerView()
                     .padding()
-                    .background(Color.white)
+                    .background(Color(uiColor: .systemBackground))
                     .cornerRadius(16)
                 
                 // Symptoms Summary
                 SymptomSummaryView(showSheet: $showSymptomSheet)
                     .padding()
-                    .background(Color.white)
+                    .background(Color(uiColor: .systemBackground))
                     .cornerRadius(16)
             }
             .padding(.horizontal)
@@ -380,9 +380,9 @@ struct CycleTrackingDashboard_Enhanced: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(uiColor: .systemBackground))
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color(uiColor: .label).opacity(0.05), radius: 10, x: 0, y: 5)
         .padding(.horizontal)
     }
     
@@ -497,7 +497,7 @@ struct QuickActionButton: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.white)
+                    .background(Color(uiColor: .systemBackground))
                     .frame(width: 60, height: 60)
                     .background(
                         LinearGradient(
