@@ -426,7 +426,8 @@ struct Dashboard_Enhanced: View {
             }
             .sheet(isPresented: $showChat) {
                 if let userAnswers = profileManager.currentUserProfile?.userAnswers {
-                    ChatView(userAnswers: userAnswers, chatStore: chatStore)
+                    ChatView_Enhanced(userAnswers: userAnswers, chatStore: chatStore)
+                        .environmentObject(userSession)
                 }
             }
             .sheet(isPresented: $showTalk) {
