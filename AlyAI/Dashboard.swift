@@ -12,6 +12,8 @@ struct Dashboard_Enhanced: View {
     @State private var showScheduling = false
     @State private var showCycleDashboard = false
     @State private var showMealPlan = false
+    @State private var showBreathingExercise = false
+    @State private var showJournalEntry = false
     @State private var selectedMood: String? = nil
     @StateObject private var chatStore = ChatStore()
     @EnvironmentObject var userSession: UserSession
@@ -273,14 +275,14 @@ struct Dashboard_Enhanced: View {
                                         icon: "wind",
                                         title: "Breathing\nExercise",
                                         color: Color(red: 0.40, green: 0.70, blue: 0.90),
-                                        action: {}
+                                        action: { showBreathingExercise = true }
                                     )
                                     
                                     QuickActionCard(
                                         icon: "book.fill",
                                         title: "Journal\nEntry",
                                         color: Color(red: 0.65, green: 0.55, blue: 0.90),
-                                        action: {}
+                                        action: { showJournalEntry = true }
                                     )
                                     
                                     QuickActionCard(
@@ -477,6 +479,14 @@ struct Dashboard_Enhanced: View {
             }
             .sheet(isPresented: $showMealPlan) {
                 DailyMealPlanView()
+            }
+            .sheet(isPresented: $showBreathingExercise) {
+                if let userAnswers = profileManager.currentUserProfile?.userAnswers {
+                    BreathingExercisesView(userAnswers: userAnswers)
+                }
+            }
+            .sheet(isPresented: $showJournalEntry) {
+                JournalEntryView()
             }
         }
     }
