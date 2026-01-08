@@ -14,6 +14,7 @@ struct Dashboard_Enhanced: View {
     @State private var showMealPlan = false
     @State private var showBreathingExercise = false
     @State private var showJournalEntry = false
+    @State private var showMeditationLibrary = false
     @State private var selectedMood: String? = nil
     @StateObject private var chatStore = ChatStore()
     @EnvironmentObject var userSession: UserSession
@@ -317,6 +318,10 @@ struct Dashboard_Enhanced: View {
                             }
                         }
                         
+                        // MARK: - Daily Meditation
+                        DailyMeditationCard()
+                            .padding(.horizontal, 20)
+                        
                         // MARK: - Cycle Tracking (Female users only)
                         if personalizationContext.gender.lowercased().contains("female") || personalizationContext.gender.lowercased().contains("woman") {
                             VStack(alignment: .leading, spacing: 12) {
@@ -487,6 +492,9 @@ struct Dashboard_Enhanced: View {
             }
             .sheet(isPresented: $showJournalEntry) {
                 JournalEntryView()
+            }
+            .sheet(isPresented: $showMeditationLibrary) {
+                MeditationLibraryView()
             }
         }
     }
@@ -853,6 +861,125 @@ struct NeedCard: View {
             return "Reach out to a friend or loved one"
         } else {
             return "Focus on this area that matters to you"
+        }
+    }
+}
+
+// MARK: - Daily Meditation Card
+struct DailyMeditationCard: View {
+    @ObservedObject var meditationManager = MeditationManager.shared
+    @State private var showMeditationLibrary = false
+    
+    var body: some View {
+        Button {
+            showMeditationLibrary = true
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Daily Meditation")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                
+                if let daily = meditationManager.dailyMeditation {
+                    // Hero meditation card
+                    ZStack {
+                        // Background gradient
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.8, green: 0.9, blue: 1.0),
+                                Color(red: 1.0, green: 0.95, blue: 0.85)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .overlay(
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 60))
+                                .foregroundColor(.white.opacity(0.1))
+                                .offset(x: 40, y: -20)
+                        )
+                        
+                        // Content
+                        HStack(spacing: 16) {
+                            // Play button
+                            Circle()
+                                .fill(Color.purple)
+                                .frame(width: 60, height: 60)
+                                .overlay(
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                        .offset(x: 2)
+                                )
+                                .shadow(color: .purple.opacity(0.3), radius: 10, x: 0, y: 5)
+                            
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(daily.video.title)
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                                
+                                Text(daily.personalizedMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.95))
+                                    .lineLimit(2)
+                                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(20)
+                    }
+                    .frame(height: 140)
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
+                } else {
+                    // Loading or fallback
+                    ZStack {
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.3), Color.blue.opacity(0.3)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        
+                        HStack(spacing: 16) {
+                            Image(systemName: "figure.mind.and.body")
+                                .font(.system(size: 40))
+                                .foregroundColor(.white)
+                            
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Loading your daily meditation...")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                Text("Personalized just for you")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(20)
+                    }
+                    .frame(height: 140)
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .sheet(isPresented: $showMeditationLibrary) {
+            MeditationLibraryView()
+        }
+        .onAppear {
+            meditationManager.loadDailyMeditation()
         }
     }
 }
