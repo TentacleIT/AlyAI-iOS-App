@@ -15,6 +15,7 @@ struct Dashboard_Enhanced: View {
     @State private var showBreathingExercise = false
     @State private var showJournalEntry = false
     @State private var showMeditationLibrary = false
+    @State private var showProfile = false
     @State private var selectedMood: String? = nil
     @StateObject private var chatStore = ChatStore()
     @EnvironmentObject var userSession: UserSession
@@ -37,14 +38,18 @@ struct Dashboard_Enhanced: View {
                     // MARK: - Mood Check-in Header (Mockup Style)
                     VStack(alignment: .leading, spacing: 16) {
                         HStack(spacing: 12) {
-                            // Profile circle with emoji
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(width: 60, height: 60)
-                                
-                                Text("😊")
-                                    .font(.system(size: 30))
+                            // Profile circle with emoji - tappable
+                            Button(action: {
+                                showProfile = true
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.3))
+                                        .frame(width: 60, height: 60)
+                                    
+                                    Text("😊")
+                                        .font(.system(size: 30))
+                                }
                             }
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -58,6 +63,15 @@ struct Dashboard_Enhanced: View {
                             }
                             
                             Spacer()
+                            
+                            // Settings/Profile icon button
+                            Button(action: {
+                                showProfile = true
+                            }) {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.black.opacity(0.6))
+                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
@@ -495,6 +509,10 @@ struct Dashboard_Enhanced: View {
             }
             .sheet(isPresented: $showMeditationLibrary) {
                 MeditationLibraryView()
+            }
+            .sheet(isPresented: $showProfile) {
+                ProfileView()
+                    .environmentObject(userSession)
             }
         }
     }
