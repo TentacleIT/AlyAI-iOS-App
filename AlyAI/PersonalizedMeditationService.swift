@@ -77,7 +77,11 @@ class PersonalizedMeditationService {
     
     private func searchYouTube(query: String) async -> [MeditationVideo]? {
         // YouTube Data API v3 endpoint
-        let apiKey = "YOUR_YOUTUBE_API_KEY" // TODO: Add to environment variables
+        // Get API key from environment variable or Info.plist
+        guard let apiKey = getYouTubeAPIKey(), !apiKey.isEmpty else {
+            print("❌ YouTube API key not configured")
+            return nil
+        }
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
         let urlString = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=\(encodedQuery)&type=video&videoDuration=medium&maxResults=5&key=\(apiKey)"
         
@@ -273,6 +277,23 @@ class PersonalizedMeditationService {
                 videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", // Placeholder
                 tags: context.greatestNeeds
             )
+        }
+        
+        return nil
+    }
+    
+    // MARK: - Configuration
+    
+    /// Get YouTube API key from environment variable or Info.plist
+    private func getYouTubeAPIKey() -> String? {
+        // Option 1: Environment variable (for development/testing)
+        if let envKey = ProcessInfo.processInfo.environment["YOUTUBE_API_KEY"], !envKey.isEmpty {
+            return envKey
+        }
+        
+        // Option 2: Info.plist (for production)
+        if let infoPlistKey = Bundle.main.object(forInfoDictionaryKey: "YOUTUBE_API_KEY") as? String, !infoPlistKey.isEmpty {
+            return infoPlistKey
         }
         
         return nil
