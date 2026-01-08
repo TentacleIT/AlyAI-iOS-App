@@ -248,36 +248,44 @@ class PersonalizedMeditationService {
         print("📋 Greatest needs: \(context.greatestNeeds)")
         print("🎯 Current focus: \(context.currentFocus)")
         
-        // Try YouTube search first
-        let youtubeVideos = await searchYouTubeMeditation(
-            for: context.greatestNeeds,
-            currentFocus: context.currentFocus
-        )
+        // DISABLED: YouTube URLs don't work with AVPlayer
+        // AVPlayer requires direct video file URLs (.mp4, .m3u8, etc.)
+        // YouTube watch URLs are web pages, not video files
         
-        if let video = youtubeVideos.first {
-            print("✅ Selected YouTube video: \(video.title)")
-            return video
-        }
+        // Try YouTube search first (DISABLED - returns incompatible URLs)
+        // let youtubeVideos = await searchYouTubeMeditation(
+        //     for: context.greatestNeeds,
+        //     currentFocus: context.currentFocus
+        // )
+        // 
+        // if let video = youtubeVideos.first {
+        //     print("✅ Selected YouTube video: \(video.title)")
+        //     return video
+        // }
         
-        // Fallback: Generate custom meditation with OpenAI
-        print("⚠️ No YouTube results, generating custom meditation with OpenAI")
+        print("ℹ️ YouTube search disabled (incompatible with AVPlayer)")
+        print("ℹ️ Using meditation library videos instead")
         
-        if let script = await generatePersonalizedMeditationScript(
-            for: context.greatestNeeds,
-            userName: context.userName,
-            currentFocus: context.currentFocus
-        ) {
-            // For now, return a video with the script in description
-            // In production, you'd generate audio and pair with visuals
-            return MeditationVideo(
-                title: "Personalized Meditation for \(context.userName)",
-                duration: 10,
-                description: script,
-                category: .anxietyRelief,
-                videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", // Placeholder
-                tags: context.greatestNeeds
-            )
-        }
+        // Return nil to fallback to category-based library selection
+        print("ℹ️ Returning nil to use category-based library videos")
+        
+        // DISABLED: OpenAI generation (can be re-enabled for audio-only meditations)
+        // if let script = await generatePersonalizedMeditationScript(
+        //     for: context.greatestNeeds,
+        //     userName: context.userName,
+        //     currentFocus: context.currentFocus
+        // ) {
+        //     // For now, return a video with the script in description
+        //     // In production, you'd generate audio and pair with visuals
+        //     return MeditationVideo(
+        //         title: "Personalized Meditation for \(context.userName)",
+        //         duration: 10,
+        //         description: script,
+        //         category: .anxietyRelief,
+        //         videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        //         tags: context.greatestNeeds
+        //     )
+        // }
         
         return nil
     }
