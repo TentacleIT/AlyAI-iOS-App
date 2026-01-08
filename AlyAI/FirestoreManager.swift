@@ -177,14 +177,15 @@ class FirestoreManager {
             "metadata",
             "profile",
             "onboarding",
-            "preferences", // Added missing preferences collection
+            "preferences",
+            "personalization", // Personalization context data
             "cycleData",
             "cycleLogs",
             "cycleInsights",
             "actionLogs",
             "dailyInsights",
             "mealHistory",
-            "devices" // Also delete devices on account deletion
+            "devices"
         ]
 
         for collectionName in collections {

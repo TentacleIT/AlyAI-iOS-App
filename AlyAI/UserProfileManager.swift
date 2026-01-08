@@ -35,6 +35,7 @@ class UserProfileManager: ObservableObject {
     
     @Published var currentUserProfile: UserProfile?
     @Published var voicePreference: TherapistVoicePreference = .default
+    @Published var isProfileLoaded: Bool = false
     private let userDefaultsKey = "user_profile_data"
     private let voiceDefaultsKey = "therapist_voice_preference"
 
@@ -58,6 +59,8 @@ class UserProfileManager: ObservableObject {
             let data = try Firestore.Encoder().encode(profile)
             try await FirestoreManager.shared.saveUserData(data, in: "profile", docId: "main")
             self.currentUserProfile = profile
+            self.isProfileLoaded = true
+            print("✅ Profile saved and loaded")
         } catch {
             print("❌ Error saving profile: \(error)")
         }
@@ -66,20 +69,27 @@ class UserProfileManager: ObservableObject {
     func loadProfile() async {
         guard let document = await FirestoreManager.shared.fetchUserDocument(from: "profile", docId: "main") else {
             self.currentUserProfile = nil
+            self.isProfileLoaded = false
             return
         }
 
         if document.exists {
             do {
                 self.currentUserProfile = try document.data(as: UserProfile.self)
+                self.isProfileLoaded = true
+                print("✅ Profile loaded from Firestore")
             } catch {
                 print("❌ Error decoding profile: \(error)")
+                self.isProfileLoaded = false
             }
+        } else {
+            self.isProfileLoaded = false
         }
     }
     
     func clearProfile() {
         self.currentUserProfile = nil
+        self.isProfileLoaded = false
         UserDefaults.standard.removeObject(forKey: userDefaultsKey)
     }
     

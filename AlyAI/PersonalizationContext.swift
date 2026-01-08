@@ -12,6 +12,8 @@ class PersonalizationContext: ObservableObject {
     @Published var userAge: Int = 0
     @Published var gender: String = ""
     
+    private var cancellables = Set<AnyCancellable>()
+    
     // MARK: - Primary Goals & Needs
     @Published var primaryGoals: [String] = []
     @Published var greatestNeeds: [String] = []
@@ -51,7 +53,59 @@ class PersonalizationContext: ObservableObject {
     @Published var contentComplexity: String = "moderate"
     
     private init() {
-        loadFromProfile()
+        // Listen for profile load events
+        UserProfileManager.shared.$isProfileLoaded
+            .sink { [weak self] isLoaded in
+                if isLoaded {
+                    print("📥 Profile loaded, loading PersonalizationContext")
+                    Task {
+                        await self?.loadFromFirestore()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Try to load immediately if profile is already loaded
+        if UserProfileManager.shared.isProfileLoaded {
+            Task {
+                await loadFromFirestore()
+            }
+        }
+    }
+    
+    /// Save personalization context to Firestore
+    func saveToFirestore() async {
+        let data = PersonalizationData(from: self)
+        do {
+            let encoded = try Firestore.Encoder().encode(data)
+            try await FirestoreManager.shared.saveUserData(encoded, in: "personalization", docId: "context")
+            print("✅ PersonalizationContext saved to Firestore")
+        } catch {
+            print("❌ Error saving PersonalizationContext: \(error)")
+        }
+    }
+    
+    /// Load personalization context from Firestore
+    func loadFromFirestore() async {
+        guard let document = await FirestoreManager.shared.fetchUserDocument(from: "personalization", docId: "context") else {
+            print("⚠️ No personalization data in Firestore, loading from profile")
+            loadFromProfile()
+            return
+        }
+        
+        if document.exists {
+            do {
+                let data = try document.data(as: PersonalizationData.self)
+                data.applyTo(context: self)
+                print("✅ PersonalizationContext loaded from Firestore")
+            } catch {
+                print("❌ Error decoding PersonalizationContext: \(error), falling back to profile")
+                loadFromProfile()
+            }
+        } else {
+            print("⚠️ Personalization document doesn't exist, loading from profile")
+            loadFromProfile()
+        }
     }
     
     /// Load personalization context from user profile
@@ -109,6 +163,11 @@ class PersonalizationContext: ObservableObject {
         // Generate personality profile
         personalityProfile = generatePersonalityProfile(from: answers)
         updateRecommendationTone()
+        
+        // Save to Firestore after loading from profile
+        Task {
+            await saveToFirestore()
+        }
     }
     
     /// Generate a personality profile based on user answers
