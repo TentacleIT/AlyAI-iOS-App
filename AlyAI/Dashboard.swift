@@ -123,11 +123,11 @@ struct Dashboard_Enhanced: View {
                         .padding(.horizontal, 20)
                         
                         // Personalized Insight Card
-                        if let insight = personalizationContext.currentFocus {
+                        if !personalizationContext.currentFocus.isEmpty {
                             PersonalizedInsightCard(
                                 title: "Your Current Focus",
-                                subtitle: insight,
-                                description: getInsightDescription(for: insight),
+                                subtitle: personalizationContext.currentFocus,
+                                description: getInsightDescription(for: personalizationContext.currentFocus),
                                 icon: "target",
                                 color: Color(red: 0.55, green: 0.45, blue: 0.85)
                             )
