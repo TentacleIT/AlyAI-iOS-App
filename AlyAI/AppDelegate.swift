@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import FirebaseAppCheck
 import FirebaseMessaging
 import UserNotifications
 
@@ -11,6 +12,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         
         // Configure Firebase
         FirebaseApp.configure()
+        
+        // Configure App Check
+        #if DEBUG
+        // Use debug provider for development/simulator
+        let providerFactory = AppCheckDebugProviderFactory()
+        #else
+        // Use DeviceCheck provider for production
+        let providerFactory = DeviceCheckProviderFactory()
+        #endif
+        AppCheck.setAppCheckProviderFactory(providerFactory)
         
         // Register for remote notifications
         UNUserNotificationCenter.current().delegate = self
