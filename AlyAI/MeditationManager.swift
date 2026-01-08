@@ -137,8 +137,9 @@ class MeditationManager: ObservableObject {
         // Analyze user's greatest needs and current focus
         let needs = context.greatestNeeds.map { $0.lowercased() }
         let focus = context.currentFocus.lowercased()
-        let stressLevel = context.stressLevel
-        let sleepQuality = context.sleepQuality
+        let stressLevel = Int(context.stressLevel) ?? 0
+        let sleepQuality = Int(context.sleepQuality) ?? 0
+        let energyLevel = Int(context.energyLevel) ?? 0
         
         // Priority logic
         if stressLevel >= 7 || needs.contains("stress") || focus.contains("stress") {
@@ -149,7 +150,7 @@ class MeditationManager: ObservableObject {
             return .anxietyRelief
         } else if needs.contains("focus") || focus.contains("focus") || focus.contains("productivity") {
             return .focusClarity
-        } else if context.energyLevel <= 3 {
+        } else if energyLevel <= 3 {
             return .energyBoost
         } else {
             return .selfCompassion
