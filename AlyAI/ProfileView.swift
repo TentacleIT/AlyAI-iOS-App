@@ -237,8 +237,8 @@ struct ProfileView: View {
                 permissionRow(
                     icon: "bell.fill",
                     title: "Notifications",
-                    status: notificationManager.isAuthorized ? "Enabled" : "Disabled",
-                    statusColor: notificationManager.isAuthorized ? .success : .textSecondary
+                    status: notificationManager.isPermissionGranted ? "Enabled" : "Disabled",
+                    statusColor: notificationManager.isPermissionGranted ? .success : .textSecondary
                 )
                 Divider().background(Color.textSecondary.opacity(0.3))
                 
